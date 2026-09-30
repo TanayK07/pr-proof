@@ -2,4 +2,3 @@
 bench/judge_cache/
 bench/*.log
 __pycache__/
-bench/runs/

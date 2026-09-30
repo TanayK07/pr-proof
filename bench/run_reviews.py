@@ -95,17 +95,14 @@ def cleanup(pr, work: Path, wt: Path):
     shutil.rmtree(wt, ignore_errors=True)
 
 
-def run_arm(arm, pr, wt: Path, out: Path):
+def run_session(prompt: str, wt: Path, out: Path, plugin: bool, meta: dict | None = None) -> dict:
+    """Run one isolated headless session in `wt`; it may only write to `out`."""
     out.mkdir(parents=True, exist_ok=True)
-    if (out / "result.json").exists():
-        return json.loads((out / "result.json").read_text())
-    fmt = dict(base=pr["base"], title=pr["title"], body=pr["body"][:4000] or "(none)", out=out)
-    prompt = (VANILLA_PROMPT if arm == "vanilla" else PRPROOF_PROMPT).format(**fmt)
     cmd = ["claude", "-p", "--model", MODEL, "--setting-sources", "", "--strict-mcp-config",
            "--no-session-persistence", "--permission-mode", "bypassPermissions",
            "--add-dir", str(out), "--output-format", "json",
            "--disallowedTools", *DENY]
-    if arm == "pr-proof":
+    if plugin:
         cmd += ["--plugin-dir", str(PLUGIN_DIR)]
     cmd += ["--", prompt]
     env = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE_CODE_") and k != "CLAUDECODE"}
@@ -116,7 +113,7 @@ def run_arm(arm, pr, wt: Path, out: Path):
         raw, err = p.stdout, p.stderr[-2000:]
     except subprocess.TimeoutExpired:
         raw, err = "", "timeout"
-    meta = {"arm": arm, "id": pr["id"], "seconds": round(time.time() - t0), "stderr": err}
+    meta = {**(meta or {}), "seconds": round(time.time() - t0), "stderr": err}
     try:
         events = json.loads(raw)
         res = next(e for e in events if e.get("type") == "result")
@@ -129,6 +126,14 @@ def run_arm(arm, pr, wt: Path, out: Path):
     for f in out.glob("*.json"):
         f.write_text(scrub(f.read_text()))
     return meta
+
+
+def run_arm(arm, pr, wt: Path, out: Path):
+    if (out / "result.json").exists():
+        return json.loads((out / "result.json").read_text())
+    fmt = dict(base=pr["base"], title=pr["title"], body=pr["body"][:4000] or "(none)", out=out)
+    prompt = (VANILLA_PROMPT if arm == "vanilla" else PRPROOF_PROMPT).format(**fmt)
+    return run_session(prompt, wt, out, plugin=arm == "pr-proof", meta={"arm": arm, "id": pr["id"]})
 
 
 def main():

@@ -19,6 +19,19 @@ ENV = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE_CODE_") a
 sem: threading.Semaphore
 
 
+def parses(content: str) -> bool:
+    """The benchmark always asks for JSON; never cache an answer it can't parse."""
+    c = content.strip()
+    if c.startswith("```"):
+        c = c.split("```")[1]
+        c = c[4:] if c.startswith("json") else c
+    try:
+        json.loads(c.strip())
+        return True
+    except json.JSONDecodeError:
+        return False
+
+
 def complete(model: str, system: str, user: str) -> str:
     key = hashlib.sha256(json.dumps([model, system, user]).encode()).hexdigest()
     hit = CACHE / key[:2] / f"{key}.json"
@@ -33,7 +46,7 @@ def complete(model: str, system: str, user: str) -> str:
             p = subprocess.run(cmd, capture_output=True, text=True, timeout=300, env=ENV, cwd="/tmp")
             try:
                 res = next(e for e in json.loads(p.stdout) if e.get("type") == "result")
-                if not res.get("is_error"):
+                if not res.get("is_error") and parses(res["result"]):
                     content = res["result"]
                     break
             except Exception:  # noqa: BLE001
