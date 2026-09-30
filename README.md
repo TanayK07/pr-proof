@@ -1,24 +1,28 @@
 # pr-proof
 
-**AI code review that fact-checks its own comments before you see them.**
+**Make AI code review less noisy. Every review comment has to prove itself before you see it.**
 
-Most AI review bots post everything they think of. Half of it is wrong, and you spend the time you saved arguing with a bot. pr-proof is three Claude Code skills that treat every review comment as a claim that needs evidence: from the diff, from the rest of the codebase, or from the official docs. Comments that can't back themselves up get dropped.
+AI review bots comment on everything they notice, and a lot of it is wrong. pr-proof is three Claude Code skills that treat each review comment as a claim and check it against the actual code: trace the execution path, read the callers, confirm library behaviour. Comments that hold up stay. Comments that don't are dropped, with the evidence.
 
-<!-- TODO: demo GIF here — one real PR, comments drafted, 2 rejected with evidence, rest posted inline. Under 30s. -->
+Point it at the comments CodeRabbit left on the 50 PRs of [Code Review Bench](https://github.com/withmartian/code-review-benchmark), and it:
 
-## The pipeline
+- **keeps 72 of 77 real bugs (93.5%)**
+- **removes 76 of 223 noise issues (34%)**
+- lifts CodeRabbit's F1 from **35.2% to 40.4%** (+5.2 points, 95% CI +1.9 to +8.3)
+
+![pr-proof checking CodeRabbit's comments](assets/demo/filter.gif)
+
+## The skills
 
 | Skill | What it does | Say |
 |---|---|---|
-| `pr-review` | Reviews a PR and posts inline GitHub comments. Each one carries the reasoning, the proof, and a concrete fix. | "review PR #123" |
-| `pr-comment-validation` | Takes review comments (from a human, a bot, or `pr-review`) and gives each a verdict (valid, partly valid, or wrong) with evidence. Changes no code. | "are these comments valid?" |
-| `pr-validation` | End to end: checks out the PR in a worktree, validates every comment in parallel, shows you the verdicts, applies the ones you approve, and replies on each thread. | "handle the comments on PR #123" |
-
-Use them together, or just point `pr-comment-validation` at whatever CodeRabbit or Copilot left on your PR.
+| `pr-comment-validation` | Takes review comments from anyone (a human, CodeRabbit, Copilot, another agent) and gives each a verdict: valid, partly valid, wrong, or style. Each verdict cites the code that proves it. Changes nothing. | "are these PR comments valid?" |
+| `pr-validation` | End to end. Checks out the PR in a worktree, validates every comment in parallel, shows you the verdicts, applies the fixes you approve, and replies on each thread. | "handle the review comments on PR #123" |
+| `pr-review` | Writes its own review, then has independent subagents try to disprove each finding before anything is posted. Supports a draft mode that writes to a file instead of posting. | "review PR #123" or "draft a review of PR #123" |
 
 ## Install
 
-As a Claude Code plugin:
+In Claude Code:
 
 ```
 /plugin marketplace add TanayK07/pr-proof
@@ -27,13 +31,53 @@ As a Claude Code plugin:
 
 Or copy the folders under `skills/` into `~/.claude/skills/`.
 
-**Needs:** [Claude Code](https://code.claude.com) and an authenticated [`gh` CLI](https://cli.github.com).
+**Needs:** [Claude Code](https://code.claude.com) and an authenticated [`gh` CLI](https://cli.github.com). Works on its own. If you have the superpowers plugin or a docs MCP server such as Context7, the skills use them too.
 
 ## Benchmark
 
-<!-- TODO: results on Code Review Bench (https://codereview.withmartian.com): precision, recall, and how many comments validation rejected, next to CodeRabbit / Copilot. Publish the run scripts so anyone can reproduce them. -->
+All numbers come from [Code Review Bench](https://github.com/withmartian/code-review-benchmark). It has 50 real PRs from Sentry, Grafana, Keycloak, Discourse and Cal.com, each with a human-written list of the real issues (the "golden comments"). The published results use Claude Opus 4.5 as the judge, and so do ours.
 
-Coming soon. Numbers will be reproducible, with the scripts in this repo.
+- **Recall:** the share of real issues a tool finds.
+- **Precision:** the share of a tool's issues that are real.
+- **F1:** combines the two, and is what the leaderboard ranks by.
+
+### pr-comment-validation as a filter on CodeRabbit
+
+| | Precision | Recall | F1 | Issues posted |
+|---|---|---|---|---|
+| CodeRabbit | 25.7% | 56.2% | 35.2% | 300 |
+| CodeRabbit + pr-proof | **32.9%** | 52.6% | **40.4%** | 219 |
+
+The filter sees each of CodeRabbit's issues exactly as the benchmark extracted it (text, file, line) plus the checked-out code. It never sees the labels. Scoring uses the benchmark's own published labels, so this comparison involves no new judging.
+
+### pr-review as a reviewer
+
+Plain Claude Code on Opus 5.5 is the control: same model, same isolation, no skills.
+
+| | Precision | Recall | F1 (95% CI) |
+|---|---|---|---|
+| pr-review | 20.0% | 59.1% | 29.8% (24.5–35.3%) |
+| pr-review drafts, before self-validation | 18.8% | 56.9% | 28.2% (23.0–33.3%) |
+| Plain Claude Code (Opus 5.5) | 18.1% | 73.7% | 29.1% (25.5–33.1%) |
+
+Honest read:
+
+- **pr-review is statistically level with plain Claude Code.** It writes fewer comments (406 issues against 558) and each is more precise, but it finds fewer bugs. The F1 difference is +0.7 points with a 95% CI of −3.4 to +4.8.
+- **Self-validation helps a little:** +1.6 F1 over its own drafts. An earlier, stricter validator cut real bugs and gave no gain, which is why it now follows the `pr-comment-validation` criteria.
+- **Run-to-run variance is large.** Two runs of the identical drafting step scored 33.5% and 28.2% F1. So a single run of any tool on 50 PRs moves a few points on its own.
+
+The standalone validator is where pr-proof clearly earns its place, so that is the headline above. Full leaderboards: [`bench/results_v2_leaderboard.md`](bench/results_v2_leaderboard.md) (current skill) and [`bench/results_v1_leaderboard.md`](bench/results_v1_leaderboard.md) (earlier validator).
+
+### Method and limits
+
+- **Isolation.** Every run is a headless Claude Code session. It has no user settings, hooks, MCP servers or other plugins, and no web, `gh` or `curl`. So it cannot read the original PR discussion the golden comments came from.
+- **Judge.** No API key was used. The benchmark's judge runs through a small OpenAI-compatible shim over `claude -p` with Claude Opus 4.5, the same model as the published results. Temperature can't be set that way.
+  - To calibrate, we rescored the benchmark's own `claude-code` reviews through the shim: F1 36.9% against 37.6% published, with identical per-PR true positives on 47 of 50 PRs.
+- **Intervals.** 95% intervals come from a bootstrap over the 50 PRs.
+- **Golden lists are incomplete.** A "noise" issue can be a real problem the golden list doesn't include. That affects every tool equally, but it means precision understates quality.
+- **Leakage.** The PRs are public and older than the models, so training-data leakage is possible for every tool on the board.
+
+Everything is reproducible from [`bench/`](bench/): the harness, per-PR outputs and the scoring scripts.
 
 ## License
 

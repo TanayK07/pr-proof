@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>pr-proof demo</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --fg: #e6edf3; --dim: #8b949e; --faint: #484f58;
+    --green: #3fb950; --red: #f85149; --amber: #d29922; --blue: #58a6ff; --violet: #bc8cff;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { background: var(--bg); }
+  body { width: 1200px; height: 820px; padding: 28px; font: 17px/1.55 "JetBrains Mono", "DejaVu Sans Mono", monospace; color: var(--fg); overflow: hidden; }
+  .win { height: 100%; background: var(--panel); border: 1px solid #30363d; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
+  .bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #30363d; color: var(--dim); font-size: 14px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: #30363d; }
+  .bar .title { margin-left: 10px; }
+  .term { flex: 1; padding: 18px 22px; white-space: pre; overflow: hidden; }
+  .foot { padding: 10px 22px; border-top: 1px solid #30363d; color: var(--dim); font-size: 13px; display: flex; justify-content: space-between; }
+  .dim { color: var(--dim); } .faint { color: var(--faint); } .g { color: var(--green); } .r { color: var(--red); }
+  .a { color: var(--amber); } .b { color: var(--blue); } .v { color: var(--violet); } .bold { font-weight: 700; }
+  .strike { text-decoration: line-through; color: var(--faint); }
+  .cursor { display: inline-block; width: 10px; height: 20px; background: var(--fg); vertical-align: -4px; }
+  .card { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 18px; background: var(--bg); }
+  .card h1 { font-size: 64px; letter-spacing: -1px; }
+  .card p { font-size: 24px; color: var(--dim); }
+  .card code { font-size: 20px; color: var(--blue); background: var(--panel); border: 1px solid #30363d; padding: 10px 18px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<div class="win">
+  <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="title">claude — grafana</span></div>
+  <div class="term" id="term"></div>
+  <div class="foot"><span>Replay of a real run: CodeRabbit's comments on grafana/grafana#106778 from Code Review Bench · text shortened · sped up</span><span>pr-proof</span></div>
+</div>
+<div class="card" id="card">
+  <h1>pr-proof</h1>
+  <p>Make AI code review less noisy.</p>
+  <p style="font-size:19px">On CodeRabbit's reviews of 50 PRs: kept 93% of real bugs, removed 34% of noise.</p>
+  <code>/plugin marketplace add TanayK07/pr-proof</code>
+</div>
+<script>
+// Text comes from bench/runs-filter/coderabbit/grafana_grafana-106778/{issues,verdicts}.json.
+const PROMPT = "are CodeRabbit's comments on PR #106778 valid?";
+const steps = [];
+const line = (html, replace = false, dur = 450) => steps.push({ html, replace, dur });
+for (let i = 1; i <= PROMPT.length; i += 3) line(`<span class="v">&gt;</span> ${PROMPT.slice(0, i)}<span class="cursor"></span>`, i > 1, 70);
+line(`<span class="v">&gt;</span> ${PROMPT}`, true, 700);
+line(`<span class="dim">  Skill: pr-proof:pr-comment-validation</span>`, false, 600);
+line(`<span class="b">●</span> PR #106778 <span class="dim">Notification Rule Processing Engine · 7 comments from coderabbitai</span>`);
+line(`<span class="b">●</span> Checking every claim against the code<span class="dim">…</span>`);
+const spin = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
+for (let i = 0; i < 8; i++) line(`  <span class="b">${spin[i % spin.length]}</span> <span class="dim">tracing call sites, hooks and types… ${(i + 1) * 5}s</span>`, i > 0, 250);
+const drop = (claim, ev, first) => { line(`  <span class="r">✗ wrong</span>  <span class="strike">${claim}</span>`, first, 500); line(`           <span class="dim">${ev}</span>`, false, 1000); };
+drop("at(0)?.rules.map() throws when groups is empty", "optional chaining short-circuits the whole chain (GrafanaGroupLoader.tsx:68)", true);
+drop("useCanSilence calls hooks before its early return", "that order is required by the Rules of Hooks (useAbilities.ts:560)");
+drop("useIsRuleEditable queries before checking the rule", "file not changed by this PR; hook order is required (useIsRuleEditable.ts:18)");
+drop("handleDelete gets EditableRuleIdentifier, wants RulerRuleDTO", "both call sites pass zero-arg closures (RuleActionsButtons.V2.tsx:99)");
+drop("isProvisionedPromRule reads provenance without narrowing", "this PR adds provenance to GrafanaPromRuleDTOBase (unified-alerting-dto.ts:135)");
+line(`  <span class="g">✓ valid</span>  Missing key on GrafanaRuleListItem inside rules.map() <span class="dim">(FilterView.tsx:157)</span>`, false, 700);
+line(`  <span class="g">✓ valid</span>  Delete/pause still gated on a ruler rule <span class="dim">(AlertRuleMenu.tsx:123)</span>`, false, 900);
+line("");
+line(`<span class="g">●</span> <span class="bold">2 of 7 comments worth acting on · 5 disproved with evidence</span>`, false, 3200);
+steps.push({ card: true, dur: 4000 });
+
+function render(k) {
+  const lines = [];
+  for (const s of steps.slice(0, k)) {
+    if (s.card) continue;
+    if (s.replace && lines.length) lines[lines.length - 1] = s.html; else lines.push(s.html);
+  }
+  document.getElementById("term").innerHTML = lines.join("\n");
+  document.getElementById("card").style.display = steps[k - 1] && steps[k - 1].card ? "flex" : "none";
+}
+document.body.dataset.durs = JSON.stringify(steps.map(s => s.dur));
+render(parseInt(location.hash.slice(1) || steps.length, 10));
+</script>
+</body>
+</html>

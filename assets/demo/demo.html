@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>pr-proof demo</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --fg: #e6edf3; --dim: #8b949e; --faint: #484f58;
+    --green: #3fb950; --red: #f85149; --amber: #d29922; --blue: #58a6ff; --violet: #bc8cff;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { background: var(--bg); }
+  body { width: 1200px; height: 760px; padding: 28px; font: 17px/1.55 "JetBrains Mono", "DejaVu Sans Mono", monospace; color: var(--fg); overflow: hidden; }
+  .win { height: 100%; background: var(--panel); border: 1px solid #30363d; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
+  .bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #30363d; color: var(--dim); font-size: 14px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: #30363d; }
+  .bar .title { margin-left: 10px; }
+  .term { flex: 1; padding: 18px 22px; white-space: pre; overflow: hidden; }
+  .foot { padding: 10px 22px; border-top: 1px solid #30363d; color: var(--dim); font-size: 13px; display: flex; justify-content: space-between; }
+  .dim { color: var(--dim); } .faint { color: var(--faint); } .g { color: var(--green); } .r { color: var(--red); }
+  .a { color: var(--amber); } .b { color: var(--blue); } .v { color: var(--violet); } .bold { font-weight: 700; }
+  .strike { text-decoration: line-through; color: var(--faint); }
+  .cursor { display: inline-block; width: 10px; height: 20px; background: var(--fg); vertical-align: -4px; }
+  .card { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 18px; background: var(--bg); }
+  .card h1 { font-size: 64px; letter-spacing: -1px; }
+  .card p { font-size: 24px; color: var(--dim); }
+  .card code { font-size: 20px; color: var(--blue); background: var(--panel); border: 1px solid #30363d; padding: 10px 18px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<div class="win">
+  <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="title">claude — grafana</span></div>
+  <div class="term" id="term"></div>
+  <div class="foot"><span>Replay of a real run on grafana/grafana#97529 from Code Review Bench · text shortened · sped up</span><span>pr-proof</span></div>
+</div>
+<div class="card" id="card">
+  <h1>pr-proof</h1>
+  <p>AI code review that fact-checks its own comments.</p>
+  <code>/plugin marketplace add TanayK07/pr-proof</code>
+</div>
+<script>
+// Each step appends one line (or replaces the last line when `replace` is set).
+// Text comes from bench/runs/grafana_grafana-97529/pr-proof/{drafts_raw,drafts}.json.
+const PROMPT = "/pr-proof:pr-review #97529 in draft mode";
+const steps = [];
+const line = (html, replace = false, dur = 450) => steps.push({ html, replace, dur });
+for (let i = 1; i <= PROMPT.length; i += 3) line(`<span class="v">&gt;</span> ${PROMPT.slice(0, i)}<span class="cursor"></span>`, i > 1, 70);
+line(`<span class="v">&gt;</span> ${PROMPT}`, true, 700);
+line("");
+line(`<span class="b">●</span> PR #97529 <span class="dim">Unified Storage Performance Optimizations · 5 files, +25 −57</span>`);
+line(`<span class="b">●</span> Reading changed files in full, their callers and the index code<span class="dim">…</span>`);
+line("");
+line(`<span class="b">●</span> <span class="bold">Drafted 4 findings</span>`);
+line(`  <span class="dim">1</span> <span class="a">MEDIUM</span> server.go:935  <span class="dim">Stop() shutdown signal is never read after Init checks removed</span>`);
+line(`  <span class="dim">2</span> <span class="a">MEDIUM</span> server.go:258  <span class="dim">Init runs on a Background ctx: uncancellable, blocks startup</span>`);
+line(`  <span class="dim">3</span> <span class="a">MEDIUM</span> search.go:216  <span class="dim">TotalDocs ranges b.cache unlocked while BuildIndex writes it</span>`);
+line(`  <span class="dim">4</span> <span class="a">MEDIUM</span> bleve.go:88    <span class="dim">Same index key can be built twice concurrently</span>`);
+line("");
+line(`<span class="b">●</span> <span class="bold">Prove it:</span> 4 independent validators, each trying to disprove one finding`);
+const spin = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
+for (let i = 0; i < 8; i++) line(`  <span class="b">${spin[i % spin.length]}</span> <span class="dim">tracing callers, locks and contexts… ${(i + 1) * 6}s</span>`, i > 0, 260);
+line(`  <span class="r">✗ 1 dropped</span>  <span class="strike">Stop() shutdown signal is never read</span>`, true, 700);
+line(`      <span class="dim">Stop() is unreachable: ResourceServer has no Stop, every caller</span>`);
+line(`      <span class="dim">holds the interface (client.go:67, sql/service.go:113)</span>`, false, 1300);
+line(`  <span class="g">✓ 2 kept</span>     <span class="dim">narrowed: s.ctx comes from context.Background() </span>`);
+line(`               <span class="dim">(server.go:235), caller ctx never forwarded (sql/server.go:77)</span>`, false, 800);
+line(`  <span class="g">✓ 3 kept</span>     <span class="dim">narrowed: TotalDocs ranges b.cache without cacheMu (bleve.go:144)</span>`, false, 800);
+line(`  <span class="g">✓ 4 kept</span>     <span class="dim">narrowed: two builds of one key can overlap after init</span>`, false, 900);
+line("");
+line(`<span class="g">●</span> <span class="bold">3 comments ready to post · 1 dropped with evidence</span> <span class="dim">→ pr-review-drafts.json</span>`, false, 3200);
+steps.push({ card: true, dur: 3500 });
+
+function render(k) {
+  const lines = [];
+  for (const s of steps.slice(0, k)) {
+    if (s.card) continue;
+    if (s.replace && lines.length) lines[lines.length - 1] = s.html; else lines.push(s.html);
+  }
+  document.getElementById("term").innerHTML = lines.join("\n");
+  document.getElementById("card").style.display = steps[k - 1] && steps[k - 1].card ? "flex" : "none";
+}
+document.body.dataset.durs = JSON.stringify(steps.map(s => s.dur));
+render(parseInt(location.hash.slice(1) || steps.length, 10));
+</script>
+</body>
+</html>
