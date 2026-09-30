@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "keycloak_keycloak-36880",
+ "seconds": 144,
+ "stderr": "",
+ "cost_usd": 0.645965,
+ "is_error": false,
+ "num_turns": 16,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote five review comments to `comments.json`. I didn't modify the repository.\n\nThe diff range from `b8c1cd41` pulls in a lot of unrelated changes, like the operator and Liquibase files. I only reviewed the files this PR is about: the permission schema and the admin permission classes.\n\n1. **Wrong results from `getClientsWithPermission`** (`ClientPermissionsV2.java:138`). It searches for resources of type `Clients`. But the per-client resources are created without a type, so it never returns any individual client. If the \"all clients\" permission is granted, it returns the literal name `\"Clients\"` as if it were a client id. `AvailableRoleMappingResource` then calls `realm.getClientById(\"Clients\").getRolesStream()` and crashes with a NullPointerException.\n\n2. **Crash on realms set up before this change** (`ClientPermissionsV2.java:219`). Those realms only have the `Users` resource. They have no `Clients` resource and none of the new scopes (`configure`, `map-roles-client-scope`, `map-roles-composite`). The lookup returns null and the next call fails with a NullPointerException, so the whole client admin API breaks for those realms. They also need a migration that adds the new resource and scopes.\n\n3. **Token exchange regression** (`ClientPermissionsV2.java:148`). Before this PR, the v2 permissions used the v1 client permissions, so `canExchangeTo` worked. Now it throws `UnsupportedOperationException`. The v1 `TOKEN_EXCHANGE` feature doesn't depend on fine-grained permissions v1, so it can run alongside v2. In that setup, exchanging to another audience returns a 500 instead of a 403.\n\n4. **`canView()` ignores `manage`** (`ClientPermissionsV2.java:87`). An admin with `manage` on all clients gets `canManage() == true` but `canView() == false`, so view-guarded endpoints forbid them. That doesn't match `canView(ClientScopeModel)` or `UserPermissionsV2`, which both accept view or manage.\n\n5. **No cleanup when clients are deleted under v2** (`AdminPermissions.java:77`). The event listener now only runs when fine-grained permissions v1 is enabled. With v2, a deleted client leaves its resource and permissions behind in the admin-permissions client. Cleanup after deleting a role or group no longer runs under v2 either."
+}

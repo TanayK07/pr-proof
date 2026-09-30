@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "grafana_grafana-103633",
+ "seconds": 103,
+ "stderr": "",
+ "cost_usd": 0.359623,
+ "is_error": false,
+ "num_turns": 8,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote six review comments to `comments.json`; the file is valid JSON and nothing in the repo was changed. The most serious finding is that the new denial cache can still lock a creator out of what they just created, which is the bug this PR sets out to fix.\n\n1. **Denials caused by stale folder data get cached (`service.go:154`).** Permission checks inherited through folders use a folder tree that is cached for 30s and isn't refreshed on a miss. If a user creates a subfolder and then a dashboard inside it, the cached tree doesn't know the subfolder, so the check fails. Reloading permissions doesn't help, and the deny is then cached for another 30s.\n\n2. **The denial cache runs first and is never cleared (`service.go:116`).** If a check runs before the creator's permissions are written, that deny sticks for the full TTL, even after the permissions exist.\n\n3. **The denial cache key is ambiguous (`cache.go:30`).**\n   - It leaves out the identity type, so the anonymous user and the renderer can share an entry if both use id `0`. An anonymous deny would then block the renderer.\n   - Its `_` separator also appears in names and folder UIDs, so different (name, folder) pairs can produce the same key.\n   - It shares the `.perm_<uid>_<action>` prefix with the existing permission cache entries.\n\n4. **Denials are now slower and heavier (`service.go:137`).** Before, a deny came from the cache. Now every new denied resource triggers a permission query against the database and adds another cache entry. A search or bulk filter over many resources the user can't see becomes one database query per resource.\n\n5. **Minor inconsistencies (`service.go:123`).** The denial key uses the raw user id from the request, while the permission cache uses the resolved UID, so the same user can be keyed two ways. Errors other than cache-miss are silently swallowed, which doubles database work when the store is failing.\n\n6. **Turning off the in-process client cache (`rbac.go:103`).** Every check now goes through the server, which after this PR can hit the database on each deny, so load goes up a lot. It's also a style nit that `NoopCache` is exported.\n\nI couldn't open the authlib source (it isn't in the local module cache), so two things are unverified: whether authlib already ships a no-op cache, and how its client handles the `ErrNotFound` that `NoopCache` returns."
+}

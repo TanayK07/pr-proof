@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "keycloak_keycloak-38446",
+ "seconds": 100,
+ "stderr": "",
+ "cost_usd": 0.5458116,
+ "is_error": false,
+ "num_turns": 13,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I've written 10 review comments to `bench/runs/keycloak_keycloak-38446/vanilla/comments.json` and didn't modify the repository. I found these by reading the code; I didn't build it or run any tests.\n\nThe most serious problem: **when recovery codes are stored in a user storage provider, a used code is never used up.**\n- The login form authenticator only tidies up locally stored codes (`removeStoredCredentialById` in `RecoveryAuthnCodesFormAuthenticator.java:86`). For codes held in user storage, that call does nothing, and nothing else marks a code as used there.\n- As a result, \"all codes used\" never becomes true, and the same code can be replayed forever.\n- The login form (`RecoveryAuthnCodeInputLoginBean.java:21`) will also ask for code #1 on every login.\n- The new test can't catch this because it only logs in once, using code index 0.\n\nThe other comments:\n- **Plaintext codes:** `CredentialHelper.createRecoveryCodesCredential` sends the raw codes, not the hashed ones, to the user storage provider. That makes plaintext storage the de facto contract for any provider that supports this credential type.\n- **Old codes stay valid:** when the codes are saved in user storage, any existing locally stored codes aren't deleted. The old set keeps working after the user regenerates.\n- **Mismatched stores:** the new lookup helper prefers the user-storage codes, but the built-in check validates against the local ones. If both exist, the code number shown and the code actually checked can come from different stores. The helper also asks the provider for all credentials, which can be slow, on every form render.\n- **Hardcoded id and missing error handling:** the provider id `\"keycloak-recovery-authn-codes\"` duplicates the existing constant. `credentialModelOpt.get()` still throws an unhelpful exception when no codes exist in either store.\n- **Test provider (`BackwardsCompatibilityUserStorage`):**\n  - `getCredentials` throws a NullPointerException for users it doesn't know.\n  - The credential it builds has no id, is always re-hashed with every code unused, and keeps the codes as plaintext in `credentialData`.\n  - Validation accepts any stored code rather than the next one in order, and doesn't remove it.\n  - Recovery codes can't be disabled or deleted, because `disableCredentialType` wasn't updated."
+}

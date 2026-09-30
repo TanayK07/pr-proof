@@ -1,0 +1,8 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "include_website_name is missing the trailing question mark (?) required by ActiveModelSerializers, so the predicate won't be invoked and website_name will serialize even when user fields are restricted (e.g., TL0/anonymous users viewing other profiles), leaking private data"
+ }
+]

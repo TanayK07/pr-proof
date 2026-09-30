@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "grafana_grafana-76186",
+ "seconds": 166,
+ "stderr": "",
+ "cost_usd": 1.0629898,
+ "is_error": false,
+ "num_turns": 14,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR review summary: 1 comment kept, 2 dropped by validation\n\nThis was a draft only: nothing was posted and GitHub wasn't contacted, so there's no PR link. The repository wasn't modified.\n\nThe rename is clean, and I didn't find any bugs. The logging change keeps working in production because `traceID` still reaches the log line through the provider registered in `pkg/infra/tracing/tracing.go:91`. The plugin fields come from the new `ContextualLoggerMiddleware`, which runs just before `LoggerMiddleware`.\n\n### HIGH severity (0)\n\n### MEDIUM severity (0)\n\n### LOW severity (1)\n- **`logger_middleware.go:58`: undocumented ordering dependency.** `LoggerMiddleware` no longer adds `pluginId`, `endpoint`, `dsName`, `dsUID` or `uname` itself; it now gets them only from `ContextualLoggerMiddleware`. The PR also deletes the only ordering comment (\"should live at the top of the middleware stack\"), and neither middleware has a test. The order in `pluginsintegration.go:159-161` is correct today. If someone later reorders `CreateMiddlewares`, those fields would silently disappear from the `grafana-data-egress` log and no test would fail. The comment suggests adding an ordering note to `NewContextualLoggerMiddleware`, plus an optional small test. I first drafted this as MEDIUM; the validator marked it partially valid and I lowered it to LOW because nothing is broken now.\n\n### Dropped in validation (2)\n- **`TestLogger.FromContext` returns a fresh logger, so tests can't see logged calls.** I had claimed this was inconsistent with `TestLogger.New`, but that was wrong: `New` also returns a fresh logger (`fake.go:18-20`), and the precedent I cited was wrong too. No existing test uses `TestLogger` with `LoggerMiddleware`, so the problem was only hypothetical.\n- **`ContextualLoggerMiddleware` skips the streaming endpoints.** The old instrumentation middleware already skipped them; the PR only moved `instrumentContext` to the new file. Behaviour is unchanged.\n\nFiles are in `bench/runs/grafana_grafana-76186/pr-proof/`:\n- `drafts_raw.json` holds the three drafts as written before validation.\n- `drafts.json` holds `{\"kept\": [...], \"dropped\": [...]}`, with each entry's verdict and evidence."
+}

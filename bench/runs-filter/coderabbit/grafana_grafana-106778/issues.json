@@ -1,0 +1,44 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Type signature mismatch: handleDelete expects RulerRuleDTO but call sites pass EditableRuleIdentifier"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Delete and pause menu items are gated by rulerRule presence even though abilities are computed with OR logic from both ruler and Grafana sources, causing regression in promRule-only scenarios where delete/pause won't appear"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "useIsRuleEditable triggers featureDiscoveryApi.endpoints.discoverDsFeatures.useQuery() call before checking if rule is undefined, causing unnecessary API calls"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "useCanSilence invokes hooks before its early return when rule is undefined"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Missing key prop on GrafanaRuleListItem in FilterView.tsx line 157 inside rules.map() function"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "promResponse.data.groups.at(0)?.rules.map() will throw runtime error if groups is empty because calling .map() on undefined crashes - needs optional chaining on .map()"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "isProvisionedPromRule accesses promRule.provenance without proper type narrowing since PromRuleDTO doesn't include provenance property and prometheusRuleType.grafana.rule() is not a type predicate"
+ }
+]

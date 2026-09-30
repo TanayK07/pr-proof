@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "ai-code-review-evaluation_discourse-graphite-9",
+ "seconds": 110,
+ "stderr": "",
+ "cost_usd": 0.5914878,
+ "is_error": false,
+ "num_turns": 9,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR review draft: 2 comments kept, 0 dropped (nothing posted)\n\nTwo independent validators checked both findings and marked both VALID. `drafts_raw.json` holds the drafts before validation. `drafts.json` now holds `{\"kept\": [...], \"dropped\": []}`, with each finding's verdict and evidence. The repository was not modified.\n\n### HIGH severity (1)\n- **`config/initializers/i18n.rb:17`: cached translations don't account for the per-site fallback language.**\n  - The fallback order now depends on `SiteSetting.default_locale`, which differs per site and can be changed at runtime.\n  - The translation cache in `translate_accelerator.rb` is shared by the whole process, and its key is only the translation key, the locale and the backend id.\n  - **On a multisite install:** a French user on site A (default Japanese) causes the Japanese fallback text to be cached. A French user on site B (default German) then gets that Japanese text.\n  - **After an admin changes `default_locale`:** the old language's text stays until the cache evicts it or the process restarts.\n  - **Fix:** add `SiteSetting.default_locale`, or the whole fallback list, to the cache key.\n\n### MEDIUM severity (1)\n- **`lib/freedom_patches/translate_accelerator.rb:62`: fallback languages are only loaded during web requests.**\n  - `I18n.fallbacks.ensure_loaded!` is only called from `ApplicationController#set_locale`.\n  - Sidekiq jobs (`app/jobs/base.rb:151`), mailers, rake tasks and the console only load the current locale.\n  - A missing key there comes back as \"translation missing\", and that result stays in the cache even after English is loaded later.\n  - **Fix:** load the whole fallback list inside `translate`.\n\n### Dropped in validation (0)\nNone.\n\nThere's no PR link because draft mode had no GitHub access."
+}

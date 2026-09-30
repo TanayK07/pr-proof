@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "calcom_cal.com-10967",
+ "seconds": 211,
+ "stderr": "",
+ "cost_usd": 1.7340349999999998,
+ "is_error": false,
+ "num_turns": 17,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Four validators are running on the 8 drafts; waiting for their verdicts."
+}

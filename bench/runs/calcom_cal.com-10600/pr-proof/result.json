@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "calcom_cal.com-10600",
+ "seconds": 205,
+ "stderr": "",
+ "cost_usd": 1.53147,
+ "is_error": false,
+ "num_turns": 18,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Waiting on validators for drafts 2 through 5."
+}

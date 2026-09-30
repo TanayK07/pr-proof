@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "getsentry_sentry-93824",
+ "seconds": 178,
+ "stderr": "",
+ "cost_usd": 1.2888743999999999,
+ "is_error": false,
+ "num_turns": 10,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Three validators are running in the background; I'll finish the drafts file once they all report back.\n\n<br>\n\n<br>\n\n<br>"
+}

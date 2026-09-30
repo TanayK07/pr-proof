@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "grafana_grafana-90939",
+ "seconds": 105,
+ "stderr": "",
+ "cost_usd": 0.5640928000000001,
+ "is_error": false,
+ "num_turns": 9,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR review summary (draft mode): 3 comments kept, 0 dropped\n\nNothing was posted and I made no GitHub calls. The repository is unchanged; I only wrote the drafts files.\n\nThe PR only changes one file, `pkg/api/webassets/webassets.go`. The diff against the base SHA lists 142 files, but the other 141 are differences between the branch and the base that aren't part of this PR (for example, the Combobox changes and the identity namespace refactor), so I didn't review them. The fix itself is correct: reads and writes of `entryPointAssetsCache` are now guarded by a mutex, and callers only read the returned pointer.\n\nOne fresh subagent checked all three drafts against the code and found each one valid.\n\n### MEDIUM (1)\n- **Missing second check after taking the write lock** (`webassets.go:49`). A goroutine that saw an empty cache takes the lock but never checks the cache again. On a cold start, every concurrent request therefore reads and parses `assets-manifest.json` again, one after another, under a process-wide lock. The fix is to check `entryPointAssetsCache != nil` again after `Lock()`, or to use `sync.OnceValues`.\n\n### LOW (2)\n- **File reads happen while holding the exclusive lock** (`webassets.go:49`). In Dev mode, and in production whenever the manifest fails to load, every call from `index.go:82`, `frontendsettings.go:62` and `recovery.go:141` waits its turn behind one global lock. The CDN fetch branch, which is switched off today (`cdn := \"\"`), would also hold the lock during a network request. The fix is to load without holding the lock and publish the result with `atomic.Pointer`.\n- **No regression test for the race** (`webassets.go:36`). No test calls `GetWebAssets`, so running the tests with `-race` never checks the new locking. I suggested a concurrent test.\n\n### Dropped in validation (0)\n- None. The validator pointed out that draft 1 also described the missing-manifest case, which its proposed fix doesn't solve. I removed that part, since draft 2 already covers it.\n\nFiles are in `bench/runs/grafana_grafana-90939/pr-proof/`:\n- `drafts_raw.json`: the drafts as written, before validation.\n- `drafts.json`: `{\"kept\": [...], \"dropped\": []}`, with each finding's verdict and evidence.\n\nThere's no PR link, because the review ran offline."
+}

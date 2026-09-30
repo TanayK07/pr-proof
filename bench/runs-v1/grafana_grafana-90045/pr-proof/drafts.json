@@ -1,0 +1,83 @@
+{
+  "kept": [
+    {
+      "id": 1,
+      "path": "pkg/apiserver/rest/dualwriter_mode3.go",
+      "line": 51,
+      "severity": "HIGH",
+      "category": "ISSUE",
+      "claim": "The async legacy writes derive their context from the request context, so they are cancelled as soon as the HTTP request completes and the legacy 'safety' write is frequently aborted.",
+      "body": "## [ISSUE] Async legacy writes inherit the request context and get cancelled when the request returns\n\n**Severity:** HIGH - the legacy \"safe measure\" write that Mode 3 relies on can be silently aborted on every request.\n\n### The Problem\n```go\ngo func() {\n    ctx, cancel := context.WithTimeoutCause(ctx, time.Second*10, errors.New(\"legacy create timeout\"))\n    defer cancel()\n    _, errObjectSt := d.Legacy.Create(ctx, obj, createValidation, options)\n```\n`ctx` is the request context. `WithTimeoutCause` only adds a deadline; the child is still cancelled when the parent is. The same pattern is used in Delete (line 110), Update (line 135) and DeleteCollection (line 163).\n\n### Theory / Proof\n- `net/http` cancels `Request.Context()` when `ServeHTTP` returns (\"For incoming server requests, the context is canceled when the client's connection closes, the request is canceled (with HTTP/2), or when the ServeHTTP method returns\").\n- The k8s generic apiserver additionally wraps non-long-running requests in `WithRequestDeadline`/timeout filters that cancel the context when the handler finishes.\n- Mode 3 returns immediately after spawning the goroutine, so the handler returns and the parent context is cancelled while the legacy write is typically still in flight. The legacy playlist storage (`pkg/registry/apis/playlist/legacy_storage.go`) calls `s.service.Create/Update/Delete(ctx, ...)` which go to SQL with that ctx, so the query fails with `context canceled`.\n\n### What happens today vs. what will break\nUnit tests use `context.Background()`, which is never cancelled, so they pass. In a real server the legacy write races the response: fast SQLite writes may win, slower DBs (MySQL/Postgres under load) lose, and legacy silently drifts from unified storage. Rolling back from Mode 3 to Mode 2/1 would then expose missing/stale data.\n\n### Research\nGo 1.21 added `context.WithoutCancel` exactly for \"fire-and-forget work that must outlive the request while keeping its values\" (go.mod here is `go 1.22.4`).\n\n### Recommendation\n```go\ngo func(ctx context.Context) {\n    ctx, cancel := context.WithTimeoutCause(ctx, 10*time.Second, errors.New(\"legacy create timeout\"))\n    defer cancel()\n    ...\n}(context.WithoutCancel(ctx))\n```\nApply to all four async writers.\n",
+      "verdict": "VALID",
+      "evidence": "mode3.go:50-57,108-114,134-141,161-167: goroutine ctx is WithTimeoutCause(request ctx); request returns immediately. net/http cancels request ctx after ServeHTTP returns and k8s WithRequestDeadline defers cancel. Legacy playlist storage (legacy_storage.go:115-125,142-165,171-186) runs multiple SQL round trips on xorm sessions bound to ctx (sqlstore/session.go:49,64). Introduced by PR (legacy was synchronous before). Tests use context.Background(). k8s source not read locally (no module cache); based on documented behaviour."
+    },
+    {
+      "id": 2,
+      "path": "pkg/apiserver/rest/dualwriter_mode3.go",
+      "line": 134,
+      "severity": "HIGH",
+      "category": "RACE CONDITION",
+      "claim": "Each legacy write runs in its own unordered goroutine, so a create followed quickly by an update/delete can apply to legacy out of order, leaving legacy permanently diverged (e.g. an orphaned object after delete).",
+      "body": "## [RACE CONDITION] Unordered fire-and-forget legacy writes can be applied out of order\n\n**Severity:** HIGH - legacy can end up with objects that were deleted, or with stale content, with no reconciliation.\n\n### The Problem\nCreate (line 50), Update (line 134), Delete (line 108) and DeleteCollection (line 161) each spawn an independent goroutine. There is no ordering between goroutines of successive requests on the same object.\n\n### Theory / Proof\nSequence: client `POST` playlist `a` -> US create returns, goroutine G1 started. Client immediately `DELETE a` -> US delete returns, goroutine G2 started. The Go scheduler gives no ordering guarantee between G1 and G2. If G2 runs first, `Legacy.Delete(\"a\")` returns NotFound (only a metric is recorded), then G1 creates `a` in legacy. Result: `a` is deleted in unified storage but exists forever in legacy. Same for create->update (legacy `Update` does `s.Get(ctx, name, nil)` first and fails with NotFound) and update->update (last-writer in legacy is whichever goroutine finishes last, not the last request).\n\n### What happens today vs. what will break\nIntegration tests (`doPlaylistTests`) read back via the k8s API, which in Mode 3 only reads unified storage, so divergence is invisible. Any rollback to Mode 1/2 (which reads legacy) would surface the orphaned/stale rows.\n\n### Research\nDual-write migrations (e.g. Stripe's online migrations pattern, Kubernetes storage version migrations) either write synchronously to the secondary or use an ordered queue/outbox per key so the secondary sees writes in commit order.\n\n### Recommendation\nEither keep the legacy write synchronous (log but don't fail the request on error), or serialize per object key:\n```go\n// keyed worker: one goroutine/channel per name, or a single ordered queue\nd.legacyQueue.Enqueue(name, func(ctx context.Context) error { ... })\n```\nAt minimum, document that Mode 3 legacy is best-effort and unordered, and add a reconciliation step before allowing a rollback from Mode 3.\n",
+      "verdict": "VALID",
+      "evidence": "mode3.go:50,108,134,161 spawn unordered goroutines; base ran legacy synchronously. Legacy Delete/Update do s.Get first (legacy_storage.go:171-173,142-144) and fail NotFound if create not yet committed; error only becomes a metric (mode3.go:113). No reconciliation; reads only from Storage (mode3.go:69,85). Window is short under normal load."
+    },
+    {
+      "id": 3,
+      "path": "pkg/apiserver/rest/dualwriter_mode3.go",
+      "line": 45,
+      "severity": "MEDIUM",
+      "category": "ISSUE",
+      "claim": "Storage failures in Create and Update are recorded in the legacy duration histogram, and the legacy DeleteCollection result is recorded in the storage histogram, so both metrics are wrong.",
+      "body": "## [ISSUE] Metrics recorded to the wrong histogram in Create, Update and DeleteCollection\n\n**Severity:** MEDIUM - the dual-writer dashboards used to decide whether Mode 3 is safe will report misleading error rates.\n\n### The Problem\n```go\ncreated, err := d.Storage.Create(ctx, obj, createValidation, options)\nif err != nil {\n    d.recordLegacyDuration(true, mode3Str, options.Kind, method, startStorage) // storage error -> legacy metric\n```\n- Line 45 (Create) and line 128 (Update): a unified-storage failure is recorded via `recordLegacyDuration`.\n- Line 166 (DeleteCollection goroutine): the legacy call result is recorded via `recordStorageDuration`.\n\n### Theory / Proof\n`metrics.go` defines `recordLegacyDuration` -> `grafana_dual_writer_legacy_duration_seconds` and `recordStorageDuration` -> `grafana_dual_writer_storage_duration_seconds`. The Mode 1 implementation this was modelled on uses the matching recorder for each store (`dualwriter_mode1.go` Create: `recordLegacyDuration` after `d.Legacy.Create`). The success paths in the same functions use `recordStorageDuration`, confirming the error branch is a copy/paste slip.\n\n### What happens today vs. what will break\nUnified-storage create/update errors show up as legacy errors with a legacy latency, and storage error rate looks lower than it really is; legacy DeleteCollection failures (always, for playlists: `DeleteCollection for playlists not implemented`) inflate the storage error rate for `delete-collection`.\n\n### Recommendation\n```go\n// Create / Update error branch\nd.recordStorageDuration(true, mode3Str, options.Kind, method, startStorage)\n// DeleteCollection goroutine\nd.recordLegacyDuration(err != nil, mode3Str, options.Kind, method, startLegacy)\n```\n",
+      "verdict": "VALID",
+      "evidence": "mode3.go:42-45 and 126-129 record storage errors via recordLegacyDuration; 165-166 record legacy DeleteCollection via recordStorageDuration. metrics.go maps these to distinct histograms. Mode2 uses matching recorders. Legacy playlist DeleteCollection always errors (legacy_storage.go:191-192), inflating storage error rate."
+    },
+    {
+      "id": 4,
+      "path": "pkg/apiserver/rest/dualwriter_mode3.go",
+      "line": 105,
+      "severity": "MEDIUM",
+      "category": "ISSUE",
+      "claim": "Delete success records the object name as the 'kind' label, creating one Prometheus series per deleted object (unbounded cardinality) and never recording under the real kind.",
+      "body": "## [ISSUE] Delete records object `name` in the `kind` label - unbounded metric cardinality\n\n**Severity:** MEDIUM - every deleted object creates a new time series in `grafana_dual_writer_storage_duration_seconds`.\n\n### The Problem\n```go\nd.recordStorageDuration(false, mode3Str, name, method, startStorage)\n```\nThe third argument is the `kind` label (`[]string{\"is_error\", \"mode\", \"kind\", \"method\"}` in `metrics.go`). Every other call in this file passes `options.Kind`.\n\n### Theory / Proof\nPrometheus creates a new series for each distinct label value set; the Prometheus docs warn: \"Do not use labels to store dimensions with high cardinality (many different label values), such as user IDs, email addresses, or other unbounded sets of values.\" Object names (playlist UIDs, dashboard UIDs) are unbounded. These are native histograms, so each series holds a set of buckets.\n\n### What happens today vs. what will break\nLow traffic hides it; on a large instance with many deletes the metric grows without bound and the `delete` method never appears under the real kind in dashboards.\n\n### Recommendation\n```go\nd.recordStorageDuration(false, mode3Str, options.Kind, method, startStorage)\n```\n",
+      "verdict": "VALID",
+      "evidence": "mode3.go:106 passes `name` (object name) as the kind label (metrics.go labels is_error,mode,kind,method); all other calls pass options.Kind. New in PR; unbounded series per deleted object."
+    },
+    {
+      "id": 6,
+      "path": "pkg/apiserver/rest/dualwriter_mode3.go",
+      "line": 138,
+      "severity": "MEDIUM",
+      "category": "ISSUE",
+      "claim": "Legacy Update now re-runs the caller's objInfo against the legacy object instead of mirroring the object unified storage persisted, so legacy can diverge from unified storage and the request's patch/transformers are invoked again after the request has finished.",
+      "body": "## [ISSUE] Legacy update re-applies the raw `objInfo` instead of mirroring the unified-storage result\n\n**Severity:** MEDIUM - legacy content can diverge from unified storage on patches.\n\n### The Problem\n```go\n_, _, errObjectSt := d.Legacy.Update(ctx, name, objInfo, createValidation, updateValidation, forceAllowCreate, options)\n```\nThe previous implementation wrapped the result persisted in unified storage: `&updateWrapper{upstream: objInfo, updated: obj}` so legacy received exactly what was written to unified storage. Mode 1 also builds an `updateWrapper` around the resolved object.\n\n### Theory / Proof\n`objInfo` from the k8s handlers is not a value: for PATCH it is the patcher's `applyPatch` closure (`k8s.io/apiserver/pkg/endpoints/handlers/patch.go`) which re-applies the patch to whatever `oldObj` it is given and mutates patcher state; for PUT it is `DefaultUpdatedObjectInfo` running the admission transformers again. Legacy `Update` (`pkg/registry/apis/playlist/legacy_storage.go:147`) calls `objInfo.UpdatedObject(ctx, old)` with the *legacy* object. If legacy differs at all (e.g. because an earlier async write was lost or reordered), a merge/JSON patch produces a different result than the one stored in unified storage, and a JSON patch with `test` ops can fail outright. It also re-executes request-scoped code after the handler has returned.\n\n### Recommendation\nMirror the persisted object, as before:\n```go\ngo func(updated runtime.Object) {\n    ...\n    _, _, err := d.Legacy.Update(ctx, name, &updateWrapper{upstream: objInfo, updated: updated},\n        createValidation, updateValidation, forceAllowCreate, options)\n}(res.DeepCopyObject())\n```\n",
+      "verdict": "VALID",
+      "evidence": "mode3.go:139 passes raw objInfo to Legacy.Update; base used updateWrapper{updated: obj} (dualwriter.go:142 returns stored object); mode1:250 and mode2:298 also wrap. Legacy Update (legacy_storage.go:141-147) calls objInfo.UpdatedObject on the legacy object, re-running patch/admission in a goroutine post-response against a possibly divergent base. Patcher state mutation claim not verified locally."
+    },
+    {
+      "id": 7,
+      "path": "pkg/apiserver/rest/dualwriter_mode3.go",
+      "line": 65,
+      "severity": "LOW",
+      "category": "ISSUE",
+      "claim": "The PR removes Mode 3's error logging for failed legacy writes; failures now only set is_error=true on a histogram with no error text or object name (and DeleteCollection legacy failures land in the storage metric), making reconciliation harder.",
+      "body": "## [ISSUE] Legacy write failures are no longer logged\n\n**Severity:** LOW - legacy failures are visible only as an `is_error=true` histogram label, with no error text or object name.\n\n### The Problem\nIn every async goroutine (Create line 55-56, Delete 112-113, Update 139-140, DeleteCollection 165-166) the legacy error only feeds `record*Duration(err != nil, ...)`. Before this PR, Mode 3 logged each failure with the object (`unable to create object in legacy storage`, `could not delete from legacy store`, `could not update object in legacy store`, `failed to delete collection successfully from LegacyStorage`). The legacy playlist storage does not log either.\n\n### Theory / Proof\nThe metric keeps `kind`/`method` labels, so operators can see *that* legacy writes fail but not *which* object or *why*. That is what they would need to reconcile legacy before rolling back from Mode 3. DeleteCollection is worse: line 166 records the legacy result in the storage histogram, so its legacy failures do not show up as legacy errors at all.\n\n### What happens today vs. what will break\nMode 1's async goroutines also only record metrics, so part of this is an existing convention. But Mode 3's legacy write is described as the safety net, and this PR removes logging that already existed.\n\n### Recommendation\n```go\nif errObjectSt != nil {\n    log.WithValues(\"object\", created).Error(errObjectSt, \"unable to write object to legacy storage\")\n}\n```\nAlso switch line 166 to `recordLegacyDuration`.\n",
+      "verdict": "PARTIALLY_VALID",
+      "evidence": "mode3.go:55-56,112-113,139-140,165-166 only feed err!=nil into histograms; base logged legacy failures with object. 'Undiagnosable' overstated: metric keeps is_error/mode/kind/method labels, and mode1 follows a record-only convention. DeleteCollection legacy failures go to the storage metric (line 166)."
+    }
+  ],
+  "dropped": [
+    {
+      "id": 5,
+      "path": "pkg/apiserver/rest/dualwriter_mode3.go",
+      "line": 97,
+      "severity": "LOW",
+      "category": "ISSUE",
+      "claim": "Delete puts d.Log instead of the enriched log into the context, so storage/legacy logs for delete lose the name/kind/method fields.",
+      "body": "## [ISSUE] Delete stores the base logger in the context instead of the enriched one\n\n**Severity:** LOW - loss of structured log fields for delete.\n\n### The Problem\n```go\nlog := d.Log.WithValues(\"name\", name, \"kind\", options.Kind, \"method\", method)\nctx = klog.NewContext(ctx, d.Log)\n```\nEvery other method does `ctx = klog.NewContext(ctx, log)`.\n\n### Theory / Proof\nDownstream code that calls `klog.FromContext(ctx)` (storage implementations, and the async legacy goroutine that inherits this ctx) gets a logger without `name`, `kind`, `method`, making delete failures hard to correlate.\n\n### Recommendation\n```go\nctx = klog.NewContext(ctx, log)\n```\n",
+      "verdict": "STYLE_PREFERENCE",
+      "evidence": "mode3.go:97 stores d.Log in ctx, but no klog.FromContext consumer exists under pkg/, Delete's own log call uses enriched `log`, and the goroutine logs nothing. No observable change today."
+    }
+  ]
+}

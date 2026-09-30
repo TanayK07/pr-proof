@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "keycloak_keycloak-37634",
+ "seconds": 253,
+ "stderr": "",
+ "cost_usd": 2.1777915999999995,
+ "is_error": false,
+ "num_turns": 18,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I'm waiting on the validators and will pick up when they report back.\n\n<br>"
+}

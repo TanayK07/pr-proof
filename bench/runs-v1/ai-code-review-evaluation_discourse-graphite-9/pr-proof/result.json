@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "ai-code-review-evaluation_discourse-graphite-9",
+ "seconds": 227,
+ "stderr": "",
+ "cost_usd": 0.7477817999999999,
+ "is_error": false,
+ "num_turns": 9,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Both checkers are running; I'll wait for their verdicts before writing the final drafts file."
+}

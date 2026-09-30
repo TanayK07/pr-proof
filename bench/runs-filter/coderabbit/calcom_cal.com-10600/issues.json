@@ -1,0 +1,56 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Backup codes are stored as decryptable ciphertext using symmetricEncrypt instead of one-way hashes, making them recoverable if DB and app key material are exposed"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "locator.isChecked() returns a Promise<boolean>, so expect(locator.isChecked()).toBeTruthy() only asserts that a Promise object exists, not its resolved value - should use data-state attribute check instead"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Backup code validation reads full plaintext list, checks in memory, then writes back updated encrypted array - this leaves backup codes recoverable at rest and opens a TOCTOU window where two parallel requests can both pass the lookup before either write null"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Migration timestamp 20230804153419 is older than existing migrations like 20230828094603, causing Prisma migration-order drift across environments"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Password visibility toggle button has tabIndex={-1} which removes it from keyboard navigation, causing accessibility regression for keyboard-only users"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "SSO users still can't authenticate with backup codes because guards only exempt totpCode - a Google/SAML user submitting backupCode will hit ThirdPartyIdentityProviderEnabled or IncorrectEmailPassword before the backup-code branch runs"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "When totpEmail is present the login page switches to ExternalTotpFooter, so SAML/Google users never see the new backup-code entry point and can still be locked out after losing their authenticator"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "Component exported from BackupCode.tsx is named TwoFactor instead of BackupCode, making DevTools, stack traces, and search results point to the wrong component during auth debugging"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "Test suite doesn't cover login-with-backup-code, disable-via-backup-code, or sequential reuse failure, so the recovery path can regress without CI noticing"
+ }
+]

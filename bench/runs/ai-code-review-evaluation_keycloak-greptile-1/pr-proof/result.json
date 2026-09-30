@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "ai-code-review-evaluation_keycloak-greptile-1",
+ "seconds": 90,
+ "stderr": "",
+ "cost_usd": 0.5412626,
+ "is_error": false,
+ "num_turns": 9,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR Review Summary: 2 draft comments, none dropped in validation\n\nThis is draft mode, so nothing was posted and GitHub was not contacted. The validated drafts are in `drafts.json` as `{\"kept\": [...], \"dropped\": []}`, and the pre-validation copy is in `drafts_raw.json`. The repository was not modified.\n\n### HIGH severity (2)\n- **`UsernameForm.java:47` \u2014 the `services` module won't compile.** It calls `isConditionalPasskeysEnabled()` with no arguments. The PR's last commit changed that method to take a `UserModel`, and there is no version without arguments anywhere in the class hierarchy. Fix: pass `context.getUser()`.\n- **`UsernamePasswordForm.java:161` \u2014 `user != null` turns passkeys off on a normal first login.** Before this PR, the passkey form data was only set up when no user was known yet. The new check requires a user, so a first login (where there is no user yet) no longer gets it. Re-authentication with passkeys now works, but first-login passkey sign-in doesn't. The PR's own test `PasskeysUsernamePasswordFormTest.webauthnLoginWithDiscoverableKey` (lines 82\u2013119) expects passkey login with no user set, so it would fail. Suggested fix:\n  ```java\n  return webauthnAuth != null && webauthnAuth.isPasskeysEnabled()\n          && (user == null || user.credentialManager().isConfiguredFor(webauthnAuth.getCredentialType()));\n  ```\n  This also limits re-authentication to users who actually have a passkey, which is what the test comment at line 304 says should happen.\n\n### MEDIUM / LOW severity (0)\n\n### Dropped in validation (0)\n\nOther things I checked and didn't flag:\n- **Passkey belonging to a different user:** re-authenticating with another user's passkey is already rejected (`WebAuthnAuthenticator.java:201-210`).\n- **Style only:** the new `shouldShowWebAuthnAuthenticators` override has no `@Override` annotation, and the moved re-authentication helper duplicates a check that already exists.\n\nThere's no PR link to share because I had no network access and only reviewed the local diff."
+}

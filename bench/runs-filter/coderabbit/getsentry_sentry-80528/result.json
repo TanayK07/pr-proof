@@ -1,0 +1,11 @@
+{
+ "seconds": 28,
+ "stderr": "",
+ "cost_usd": 0.19373420000000002,
+ "is_error": false,
+ "num_turns": 5,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Three of the four review comments are valid, but only one points to a real bug (#2). The other two valid ones are comment typos, and the fourth is style. All four point at code this PR moved from `mark_failed.py` without changing it, so none of these problems were introduced by the PR. I wrote the verdicts to `verdicts.json` as a valid JSON array; no code was changed and no replies were posted.\n\n| # | Category | Verdict | Actionable | Summary |\n|---|---|---|---|---|\n| 0 | Nitpick | VALID | OPTIONAL | `incident_occurrence.py:132` does say \"humam\" (and \"readible\"). It's a docstring, so there's no effect on behavior. |\n| 1 | Nitpick | STYLE_PREFERENCE | OPTIONAL | At line 146 the dictionary always has exactly one key (line 145 guarantees it), so `list(...)[0]` and `next(iter(...))` behave the same. |\n| 2 | Correctness | VALID | YES | Details below. |\n| 3 | Nitpick | VALID | OPTIONAL | `incidents.py:51` says \"commits\", but the threshold counts check-ins (`previous_checkins[:failure_issue_threshold]`, line 48). It's a comment only. |\n\n**#2 in detail:**\n- **The bug:** in `get_monitor_environment_context`, lines 160\u2013162 make a copy of the monitor config and replace `schedule_type` with its readable name. Line 168 then returns the original `monitor.config` instead of the copy, so the copy is never used.\n- **Effect:** the event's monitor context carries the raw number for the schedule type rather than its display name.\n- **The test locks this in:** `tests/sentry/monitors/logic/test_mark_failed.py:118-119` asserts `\"schedule_type\": 2`. Returning the copy would also mean updating that assertion."
+}

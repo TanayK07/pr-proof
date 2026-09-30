@@ -1,0 +1,37 @@
+[
+  {
+    "path": "packages/app-store/index.ts",
+    "line": 3,
+    "body": "These `import()` calls all run as soon as `@calcom/app-store` is first imported, because the object literal calls them immediately. So every app package (googleapis, stripe, tsdav, ews, etc.) is still loaded on first use, just async now, and the PR doesn't achieve its lazy-loading goal. Also, if any single app module fails to load (missing env or dependency, or an error thrown at the top level), you get an unhandled promise rejection at startup. That can crash the process or spam logs even when that app is never used. Store loaders instead (`applecalendar: () => import(\"./applecalendar\")`) and call `await appStore[key]?.()` at the call sites."
+  },
+  {
+    "path": "packages/app-store/vital/lib/reschedule.ts",
+    "line": 125,
+    "body": "`forEach(async ...)` drops the returned promises. Nothing awaits the calendar/video deletions, and the surrounding `try/catch` can no longer catch their errors. Any failure in `getCalendar` or `deleteEvent` now becomes an unhandled promise rejection, and the function returns before the deletions finish. Use `await Promise.all(bookingRefsFiltered.map(async ...))` or a `for...of` loop."
+  },
+  {
+    "path": "packages/app-store/wipemycalother/lib/reschedule.ts",
+    "line": 125,
+    "body": "Same problem as in vital: `forEach(async ...)` isn't awaited, so the `try/catch` around it is dead code for these async errors. Rejections from `getCalendar`/`deleteEvent` go unhandled, and the reschedule flow keeps going (sends emails, etc.) before the external events are deleted. Use `await Promise.all(...map(async ...))`."
+  },
+  {
+    "path": "packages/trpc/server/routers/viewer/bookings.tsx",
+    "line": 553,
+    "body": "`bookingRefsFiltered.forEach(async ...)` fires and forgets the calendar deletions. Nothing awaits these promises, so errors become unhandled rejections instead of reaching this mutation's error handling. On serverless (Vercel), the function may also be frozen or terminated after the response, before `deleteEvent` runs, so the old calendar events are never removed. Await with `Promise.all(bookingRefsFiltered.map(async ...))`."
+  },
+  {
+    "path": "packages/core/CalendarManager.ts",
+    "line": 28,
+    "body": "`calendar` is now a Promise that is created eagerly and only awaited later in `getConnectedCalendars`. If it rejects (for example, a CalendarService constructor throws on bad credentials) and a caller never awaits `item.calendar`, you get an unhandled rejection. This also silently changes the public type of `getCalendarCredentials()[n].calendar` from `Calendar | null` to `Promise<Calendar | null>`. Consider storing a lazy getter, or resolving the calendar only inside `getConnectedCalendars`."
+  },
+  {
+    "path": "packages/features/bookings/lib/handleCancelBooking.ts",
+    "line": 460,
+    "body": "This `.forEach(async (credential) => ...)` still fires and forgets. The PR converted the `else` branch below to `for...of` but left this one alone, and it now awaits `getCalendar` too. Nothing awaits the recurring-event `deleteEvent` calls, so they can be lost when the handler returns, and their errors become unhandled rejections. Convert this to a `for...of` loop as well."
+  },
+  {
+    "path": "packages/core/videoClient.ts",
+    "line": 24,
+    "body": "The loop awaits each app module one at a time. With the current eager `import()` in index.ts this is mostly harmless, but if the loaders become lazy it will load them serially. `await Promise.all(withCredentials.map(...))` keeps both the ordering and the parallelism."
+  }
+]

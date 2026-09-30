@@ -1,0 +1,26 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "isConditionalPasskeysEnabled() is called with no arguments but now requires a UserModel parameter, causing a compile error - should pass context.getUser() as the argument"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "findElement throws NoSuchElementException when element doesn't exist (doesn't return null), and catching generic Exception is too broad - should use Assert.assertThrows(NoSuchElementException.class, ...) instead"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Same element absence check issue at lines 312-317 - try/catch pattern should be replaced with Assert.assertThrows(NoSuchElementException.class, ...)"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Typo 'Succesful' should be 'Successful' at line 413"
+ }
+]

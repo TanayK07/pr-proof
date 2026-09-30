@@ -1,0 +1,20 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Indefinite-length encoding (0x80) is not properly handled by callers - readLength() returns -1 for indefinite-length encoding, but readSequence() would skip the loop entirely and readInteger() would throw NegativeArraySizeException when calling read(-1)"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Dead code: unused encoder instances - two lines create ASN1Encoder instances and write values to them but the results are never used (ASN1Encoder.create().write(rBigInteger) and ASN1Encoder.create().write(sBigInteger))"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Key pair curve may not match all tested algorithms - EC key pair is generated using default curve but each ECDSA algorithm expects a specific curve: ES256 uses P-256 (secp256r1), ES384 uses P-384 (secp384r1), and ES512 uses P-521 (secp521r1)"
+ }
+]

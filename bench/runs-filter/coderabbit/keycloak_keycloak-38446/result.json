@@ -1,0 +1,11 @@
+{
+ "seconds": 61,
+ "stderr": "",
+ "cost_usd": 0.406072,
+ "is_error": false,
+ "num_turns": 9,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Of the four review issues, one is a real bug worth fixing before merge. The other three are correct or partly correct but optional: two only affect the test provider, and the third is an edge case the PR introduces. I haven't changed any code. The verdicts are written to `verdicts.json`.\n\n| # | Issue | Verdict | Actionable |\n|---|---|---|---|\n| 0 | Old local codes not removed when codes are saved to user storage | VALID | YES |\n| 1 | Unchecked `.get()` calls in `RecoveryAuthnCodeInputLoginBean` | PARTIALLY_VALID | OPTIONAL |\n| 2 | Test provider's `getCredentials` loses the id and renumbers the codes | PARTIALLY_VALID | OPTIONAL |\n| 3 | Test provider lets the same code be reused forever | VALID | OPTIONAL (test code only) |\n\n- **#0 (the one to fix):** When user storage accepts the new codes (`CredentialHelper.java:125-126`), the step that deletes the old local codes is skipped. It's worse than the reviewer says: those old codes still work. Keycloak checks user storage first and then the local provider (`UserCredentialManager.isValid`, lines 66-77), so a user who regenerates their codes can still log in with the old local ones (`RecoveryAuthnCodesCredentialProvider.java:99-111`).\n- **#1:** Both `.get()` calls were already there before this PR, and the form is only shown when the user has recovery codes set up. The PR does add one new failure case: if a user storage provider says codes are set up but doesn't implement `getCredentials` (which returns nothing by default), the first `.get()` throws `NoSuchElementException`.\n- **#2:** The id is lost and the codes are renumbered (`BackwardsCompatibilityUserStorage.java:237`), but nothing breaks today. Because codes are never used up (#3), the \"all codes used\" cleanup never runs and the next code is always #1, which is accepted anyway.\n- **#3:** The check at line 340 accepts any stored code and never removes it. The built-in local provider only accepts the next code and then deletes it. This is test code, so the effect is that the tests never cover codes being used up or running out."
+}

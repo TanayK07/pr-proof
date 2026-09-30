@@ -1,0 +1,32 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Incorrect log level: Error used for informational messages in annotation cleanup - logs at line 534 use Error level for routine operational information, which will pollute error logs and potentially trigger alerts"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Variable 'err' at line 534 will always be nil at that point since errors return early, so logging it is unnecessary"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Same log level issue at lines 554-558: Error level used for informational messages in 'Annotations to clean by count' and 'cleaned annotations by count' logs"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Same log level issue at lines 576-580: Error level used for informational messages in 'Tags to clean' and 'cleaned tags' logs"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Condition checks r.cfg.AnnotationCleanupJobBatchSize > sqliteParameterLimit instead of len(ids) > sqliteParameterLimit, meaning even small final batches unnecessarily use inlined IDs when configured batch size is large"
+ }
+]

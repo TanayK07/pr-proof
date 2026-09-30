@@ -1,0 +1,8 @@
+[
+  {
+    "id": 0,
+    "verdict": "VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "pkg/services/authz/rbac/cache.go:30-32 builds the denial key as namespace + \".perm_\" + userUID + \"_\" + action + \"_\" + name + \"_\" + parent, with no escaping or length prefixes. pkg/util/shortid_generator.go:32-34 allows '_' in UIDs (a-zA-Z0-9-_), so two different (name, parent) pairs can produce the same key. Example: name=\"a_b\", parent=\"c\" and name=\"a\", parent=\"b_c\" both give \"..._a_b_c\". pkg/services/authz/rbac/service.go:116-121 returns Allowed:false on any denial-cache hit without re-checking, and service.go:153-155 writes the key after a deny. So a deny for one resource can wrongly deny a different resource for the same user and action. The impact is small: the failure is fail-closed (a wrong deny, never a wrong allow), the entry expires after shortCacheTTL = 30s (service.go:32), and it needs two UIDs that happen to line up this way. Still, a wrong 30s deny is exactly the 'creator can't access what they just created' symptom this PR is fixing, and the fix is cheap: escape the segments or use a delimiter UIDs can't contain."
+  }
+]

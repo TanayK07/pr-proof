@@ -1,0 +1,8 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Remove the unused `_create_process_for_shard` method or document if it's reserved for future use. The method at lines 127-132 has no callers in the codebase and only delegates to `_create_process_for_shards`. If not intended for public API or future extension, it should be removed to reduce maintenance burden."
+ }
+]

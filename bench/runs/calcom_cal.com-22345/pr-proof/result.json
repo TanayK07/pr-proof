@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "calcom_cal.com-22345",
+ "seconds": 162,
+ "stderr": "",
+ "cost_usd": 1.0080201999999998,
+ "is_error": false,
+ "num_turns": 12,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I've saved 4 draft findings and copied them to `drafts_raw.json`. Two validators are checking them now; I'll finish once both report back."
+}

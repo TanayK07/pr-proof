@@ -1,0 +1,26 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "InsightsBookingServicePublicOptions type at line 29 makes teamId optional for all scopes, but the schema correctly requires teamId only for scope: 'team'. This allows code like {scope: 'team', userId: 1, orgId: 1} to compile without teamId, then fails validation silently at runtime, setting this.options to null and returning no results instead of catching the error at compile time. Should use z.input<typeof insightsBookingServiceOptionsSchema> or a discriminated union type instead."
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "In getAuthorizationConditions for org scope (lines 157-168), returning empty array when teamsFromOrg.length === 0 drops the userId lookup for orgs that only have direct org memberships. teamIds already contains options.orgId, so org admins miss members' personal bookings. Should always query MembershipRepository.findAllByTeamIds using teamIds."
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Integration tests for 'should build team scope conditions' and 'should build org scope conditions' (lines 295-343) only verify SQL structure with toEqual(Prisma.sql`...`) but never execute the queries against Postgres. The ANY(...) array binding syntax is never tested at runtime, so regressions in array binding or fragment generation would pass undetected."
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Test fixtures created at lines 445-466 (userEventType and userBooking) are only cleaned up after assertions. If the query or expectation fails, those rows stay in the integration database and can contaminate later test cases. Should wrap in try/finally for cleanup."
+ }
+]

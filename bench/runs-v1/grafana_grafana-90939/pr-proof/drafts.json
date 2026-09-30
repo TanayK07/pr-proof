@@ -1,0 +1,27 @@
+{
+  "kept": [
+    {
+      "id": 1,
+      "path": "pkg/api/webassets/webassets.go",
+      "line": 49,
+      "severity": "LOW",
+      "category": "OPTIMIZATION",
+      "claim": "Without a re-check of entryPointAssetsCache after Lock(), concurrent cold-start requests each re-read and re-parse assets-manifest.json in turn instead of reusing the first successful load.",
+      "body": "## [OPTIMIZATION] Missing re-check after upgrading to the write lock\n\n**Severity:** LOW - redundant, serialized manifest reads on cold start; not a correctness bug.\n\n### The Problem\n\n```go\nentryPointAssetsCacheMu.RLock()\nret := entryPointAssetsCache\nentryPointAssetsCacheMu.RUnlock()\n\nif cfg.Env != setting.Dev && ret != nil {\n    return ret, nil\n}\nentryPointAssetsCacheMu.Lock()\ndefer entryPointAssetsCacheMu.Unlock()\n// ... always re-reads the file\n```\n\nBetween `RUnlock()` (line 43) and `Lock()` (line 48) another goroutine may already have filled `entryPointAssetsCache`. Nothing checks it again after line 49. So every goroutine that saw `nil` on the fast path queues on the exclusive lock, then opens, decodes and post-processes `assets-manifest.json` again, one at a time.\n\n### Theory / Proof\n\n`sync.RWMutex` cannot atomically upgrade a read lock to a write lock. The usual Go pattern is double-checked locking: check under `RLock`, then check again under `Lock`. Without the second check the mutex removes the data race, but every caller that missed the fast path still does the full load.\n\n### What happens today vs. what will break\n\n- Warm cache (production): the fast path returns, so there is no cost.\n- Cold start: N concurrent first requests to `/` (`pkg/api/index.go:82`) or `/api/frontend/settings` (`pkg/api/frontendsettings.go:62`) do N serialized reads of the manifest where one would do. This is a one-time startup cost. Before this PR those reads happened in parallel, and raced.\n- The Dev path deliberately bypasses the cache, so any re-check must keep the `cfg.Env != setting.Dev` condition.\n\n### Research\n\n`sync.OnceValues` (Go 1.21) and `golang.org/x/sync/singleflight` are the standard tools for \"compute once, share the result\". Double-checked locking with `RWMutex` is the manual equivalent.\n\n### Recommendation\n\n```go\nentryPointAssetsCacheMu.Lock()\ndefer entryPointAssetsCacheMu.Unlock()\n\nif cfg.Env != setting.Dev && entryPointAssetsCache != nil {\n    return entryPointAssetsCache, nil\n}\n```\n",
+      "verdict": "PARTIALLY_VALID",
+      "evidence": "webassets.go:41-49: the re-check is missing, so cold-start callers that missed the fast path each reload in turn. The failure-path half of the original claim was dropped: failures store nil (line 69), so a re-check would not avoid those reloads, and a missing file makes os.Open fail fast. The only caller that matters is page load (index.go:82, frontendsettings.go:62), and the cost is once at startup."
+    },
+    {
+      "id": 2,
+      "path": "pkg/api/webassets/webassets.go",
+      "line": 37,
+      "severity": "LOW",
+      "category": "GAP ANALYSIS",
+      "claim": "The PR fixes a data race but adds no concurrent test, so nothing under `go test -race` guards against the race coming back.",
+      "body": "## [GAP ANALYSIS] No regression test for the data race\n\n**Severity:** LOW - the fix is not protected by a test.\n\n### The Problem\n\nThe PR adds `entryPointAssetsCacheMu` to guard `entryPointAssetsCache`, but `pkg/api/webassets/webassets_test.go` only tests `readWebAssetsFromFile` and `SetContentDeliveryURL`. No test calls `GetWebAssets` from more than one goroutine.\n\n### Theory / Proof\n\nThe Go race detector only reports races on memory accesses that actually happen during a run. If no test calls `GetWebAssets` concurrently, `go test -race` cannot see a regression, for example someone adding a fast path that reads `entryPointAssetsCache` without the lock.\n\n### Recommendation\n\n```go\nfunc TestGetWebAssetsConcurrent(t *testing.T) {\n    cfg := setting.NewCfg()\n    cfg.StaticRootPath = t.TempDir()\n    // write testdata/sample-assets-manifest.json to <root>/build/assets-manifest.json\n    var wg sync.WaitGroup\n    for i := 0; i < 20; i++ {\n        wg.Add(1)\n        go func() { defer wg.Done(); _, _ = GetWebAssets(context.Background(), cfg, &licensing.OSSLicensingService{}) }()\n    }\n    wg.Wait()\n}\n```\n",
+      "verdict": "VALID",
+      "evidence": "webassets_test.go only has TestReadWebassets (line 11) and TestReadWebassetsFromCDN (line 89), and neither calls GetWebAssets. No test in pkg/api or pkg/middleware calls it concurrently: there is no t.Parallel(), and login_test.go stubs setIndexViewData. So -race cannot catch a regression."
+    }
+  ],
+  "dropped": []
+}

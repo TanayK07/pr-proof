@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "keycloak_keycloak-36882",
+ "seconds": 218,
+ "stderr": "",
+ "cost_usd": 1.7140012000000004,
+ "is_error": false,
+ "num_turns": 18,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I've written four draft findings and saved a copy to `drafts_raw.json`. Four independent validators are now checking them in parallel. I'll wait for all four before writing the kept/dropped result."
+}

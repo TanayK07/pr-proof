@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "ai-code-review-evaluation_discourse-graphite-5",
+ "seconds": 205,
+ "stderr": "",
+ "cost_usd": 1.2761518,
+ "is_error": false,
+ "num_turns": 16,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Four validators are running (drafts 1, 2, 3, and 4+5). I'll write the verdicts back once all of them return."
+}

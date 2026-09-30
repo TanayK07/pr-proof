@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "ai-code-review-evaluation_sentry-greptile-5",
+ "seconds": 138,
+ "stderr": "",
+ "cost_usd": 1.2365598,
+ "is_error": false,
+ "num_turns": 21,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote 13 review comments to `comments.json`; nothing in the repo was modified. The findings come from reading the code, not running it. The PR is titled \"Replays Self-Serve Bulk Delete System\", but the only bulk-delete change is `delete.py` skipping rows with a null `max_segment_id`, and that fix looks correct. The rest of the diff touches about 100 unrelated files.\n\nThe most serious problems:\n\n1. **Replay summary error lookup returns the wrong errors** (`project_replay_summarize_breadcrumbs.py:118`): it pairs error IDs with nodestore results by position. `nodestore.get_multi` removes duplicate IDs and returns cached entries before freshly fetched ones, so errors can get the wrong event's details.\n2. **Replay summary errors are never placed in time order** (`project_replay_summarize_breadcrumbs.py:153`): error timestamps are in seconds but replay event timestamps are in milliseconds. Every error therefore sorts before the first breadcrumb.\n3. **Other replay summary issues**: the error lookup uses the client's `field` query parameters, so it can silently drop `error_ids`. The `title`/`message` fields read from raw nodestore data are often empty.\n4. **Browser reporting endpoint rejects whole batches**: one invalid report returns 422 for the entire POST, so the valid reports in it are dropped too. Invalid reports include unknown report types or URLs like `about:blank`. The age/timestamp checks rely on truthiness, so `0` values slip through, and a report with neither field is accepted.\n5. **Table widget renders empty behind a flag** (`chart.tsx:166`): with the flag on, `TableWidgetVisualization` gets `columns={[]}` and empty data, so every table widget shows nothing for those orgs.\n6. **Hidden span attributes still show** (`attributes.tsx:67`): `is_segment`, `project_id` and `received` are only hidden while the user is searching. With an empty search box they still appear.\n7. **PR comment issue list** (`commit_context.py`): it runs one Snuba query per issue to look up the environment (an N+1 pattern). Issue titles go into a markdown link without escaping, so characters like `]` break the link.\n\nLower-priority comments:\n- The attribute-keys query changed behaviour: it now retries on failure and refetches on window focus, and it no longer filters by environment.\n- Preprod analytics are recorded before the feature-flag check, so blocked requests are counted.\n- A leftover unused `_handle_regex_match` in `parameterization.py`."
+}

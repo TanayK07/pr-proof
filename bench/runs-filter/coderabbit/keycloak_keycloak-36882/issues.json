@@ -1,0 +1,8 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Line 46 calls Profile.isFeatureEnabled(...) which will throw NullPointerException if Profile.getInstance() is null. The CLI bootstrap sequence does not guarantee Profile is initialized before run() is invoked. Need to add Environment.getCurrentOrCreateFeatureProfile() before the feature check, or make Profile.isFeatureEnabled() null-safe."
+ }
+]

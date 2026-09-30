@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "calcom_cal.com-7232",
+ "seconds": 247,
+ "stderr": "",
+ "cost_usd": 1.3064688,
+ "is_error": false,
+ "num_turns": 12,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Validators are running; waiting for their verdicts."
+}

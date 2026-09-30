@@ -1,0 +1,11 @@
+{
+ "seconds": 49,
+ "stderr": "",
+ "cost_usd": 0.18987820000000002,
+ "is_error": false,
+ "num_turns": 6,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "# PR Comment Validation Report\n\n**PR:** UX: show complete URL path if website domain is same as instance domain\n**Comments analyzed:** 1. The verdict is written to `verdicts.json`. I didn't change any code or post any replies.\n\n| Verdict | Count |\n|---|---|\n| VALID (actionable) | 1 |\n\n## Comment 0: `include_website_name` is missing its `?`, so `website_name` leaks for restricted users\n**Category:** CORRECTNESS / SECURITY\n\n**Investigation:**\n- **The method is never called.** `app/serializers/user_serializer.rb:153` defines `include_website_name` with no `?`. The project pins `active_model_serializers` 0.8.3 (`Gemfile.lock:22`). That version only looks for `include_<attr>?`, and defaults it to true for every declared attribute. So this method has no effect, and `website_name` (declared at line 43) is always included in the output. Every other check in the file ends in `?` (lines 9, 18, 27, 117, 161, and more).\n- **The leak is real.** `website` is in `untrusted_attributes` (lines 105\u2013111). The check generated for it (lines 25\u201332) returns false when `scope.restrict_user_fields?(object)` is true, which is the case when an anonymous visitor views a TL0 user's profile. `website_name` isn't in that list, and it is built from the same `user_profile.website` value. So the host, and sometimes the full path, is still sent even though `website` itself is hidden.\n\n**Verdict:** VALID | **Actionable:** YES | **Priority:** HIGH\n\n**Recommended fix:** add `:website_name` to `untrusted_attributes` and delete the broken method. The untrusted list already handles both the restriction check and the `present?` check. Only renaming the method to `include_website_name?` would make it run, but it would still let the value through for restricted users unless it also gets the `restrict_user_fields?` check."
+}

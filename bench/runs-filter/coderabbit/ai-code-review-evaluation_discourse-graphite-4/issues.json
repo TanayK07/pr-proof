@@ -1,0 +1,152 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Missing guard against missing #discourse-comments container - appendChild will throw if the container doesn't exist"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "postMessage origin validation uses substring matching on discourseUrl which can be spoofed if URL contains origin in path/query"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "postMessage height value should be parsed and validated before use to prevent invalid values"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "SSRF vulnerability: unsafe use of open() with URL from site settings allows fetching internal services, file:// URLs, or cloud metadata endpoints"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Potential NoMethodError if feed item content is nil when calling .scrub"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Unused feed_key method should be removed or connected to intended functionality"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "XSS vulnerability: raw_html cook_method bypasses sanitizer, allowing untrusted HTML to become stored XSS"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "Embed URL not escaped before interpolating into raw HTML anchor tag, allowing HTML/JS injection"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "Nil contents will raise on << operator when appending to contents"
+ },
+ {
+  "id": 9,
+  "path": null,
+  "line": null,
+  "issue": "content_sha1 updated unconditionally even if PostRevisor#revise! returns false, causing state desync"
+ },
+ {
+  "id": 10,
+  "path": null,
+  "line": null,
+  "issue": "import_remote missing timeout protection - open(url).read can hang indefinitely"
+ },
+ {
+  "id": 11,
+  "path": null,
+  "line": null,
+  "issue": "import_remote missing URL scheme validation before fetching"
+ },
+ {
+  "id": 12,
+  "path": null,
+  "line": null,
+  "issue": "Syntax error: end if is invalid ERB syntax in embed/best.html.erb"
+ },
+ {
+  "id": 13,
+  "path": null,
+  "line": null,
+  "issue": "Destructive force: true in create_table migration will drop existing topic_embeds table and data"
+ },
+ {
+  "id": 14,
+  "path": null,
+  "line": null,
+  "issue": "Destructive force: true in create_table migration will drop existing top_topics table and data"
+ },
+ {
+  "id": 15,
+  "path": null,
+  "line": null,
+  "issue": "Non-atomic Redis setnx + expire pattern can leave key without TTL permanently blocking retrieval"
+ },
+ {
+  "id": 16,
+  "path": null,
+  "line": null,
+  "issue": "Missing blank guard for SiteSetting.embed_by_username before calling downcase"
+ },
+ {
+  "id": 17,
+  "path": null,
+  "line": null,
+  "issue": "cook_method option not validated before persisting, risking invalid enum values"
+ },
+ {
+  "id": 18,
+  "path": null,
+  "line": null,
+  "issue": "Adding column with default + null: false in single migration step can cause long-running locks on large tables"
+ },
+ {
+  "id": 19,
+  "path": null,
+  "line": null,
+  "issue": "Deprecated RSpec matcher be_true should be be true (with space)"
+ },
+ {
+  "id": 20,
+  "path": null,
+  "line": null,
+  "issue": "Assertions in after block is anti-pattern - if test body fails, after block still executes causing confusing errors"
+ },
+ {
+  "id": 21,
+  "path": null,
+  "line": null,
+  "issue": "Missing error handling for network and parsing failures in poll_feed method"
+ },
+ {
+  "id": 22,
+  "path": null,
+  "line": null,
+  "issue": "raw and cooked both set to p[:cooked] in disqus importer - raw should contain source text not HTML"
+ },
+ {
+  "id": 23,
+  "path": null,
+  "line": null,
+  "issue": "Date.parse loses time information - should use DateTime.parse or Time.parse to preserve full timestamp"
+ },
+ {
+  "id": 24,
+  "path": null,
+  "line": null,
+  "issue": "Consider using image_tag for safer avatar rendering instead of direct URL interpolation"
+ }
+]

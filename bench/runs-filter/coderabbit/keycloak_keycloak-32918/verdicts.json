@@ -1,0 +1,14 @@
+[
+  {
+    "id": 0,
+    "verdict": "PARTIALLY_VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "InfinispanIdentityProviderStorageProvider.java:100 fetches storedIdp = idpDelegate.getByAlias(alias), which can be null. The new call registerIDPLoginInvalidation(storedIdp) at :111 is null-safe: it gates on getLoginPredicate().test(idp), and that predicate starts with Objects::nonNull (IdentityProviderStorageProvider.java:253), so a null IdP just skips invalidation. The only NPE path is registerIDPInvalidation(storedIdp) at :103, which dereferences idp.getInternalId() at :366, and only when the alias cache key is already invalid. That path existed before this PR: the base code passed idpDelegate.getByAlias(alias) straight into registerIDPInvalidation. So the reviewer is wrong that the new invalidation calls throw; the remaining risk is pre-existing and narrow (remove of a non-existent alias while its cache key is invalidated in the same transaction). A null guard in the isInvalid branch is a cheap hardening but not required by this change."
+  },
+  {
+    "id": 1,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "OrganizationCacheTest.java:381 (inside the 20-iteration loop in testCacheIDPForLogin) and :425 (after creating idp-alias-20) register getCleanup().addCleanup(testRealm().identityProviders().get(\"alias\")::remove). They use the literal \"alias\" instead of \"idp-alias-\" + i / \"idp-alias-20\", so the cleanup targets a non-existent IdP and never removes the ones the test created. The IdPs also stay linked to the organization. The bug came from copying an existing line (:303, already in the base commit at :301), but the new occurrences are introduced by this PR. Per-test realm re-import likely limits cross-test leakage, but the cleanup is plainly incorrect. Fix: use the generated alias."
+  }
+]

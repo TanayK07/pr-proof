@@ -1,0 +1,4 @@
+[
+  {"path": "src/sentry/monitors/logic/incident_occurrence.py", "line": 168, "body": "Bug carried over in the move: `config` is copied and `schedule_type` is swapped for its display value (lines 160-162), but the returned context uses the raw `monitor_environment.monitor.config` again. So the local `config` is never used, and the event's monitor context shows the integer schedule_type instead of the readable label. This should be `\"config\": config`."},
+  {"path": "src/sentry/monitors/logic/incident_occurrence.py", "line": 145, "body": "If none of `failed_checkins` has a status in HUMAN_FAILURE_STATUS_MAP (for example an unexpected status), `status_counts` is empty. `get_text_list([])` then returns '' and the evidence reads ' check-ins detected'. The docstring's fallback, 'A failed check-in was detected', is never produced. Handle the empty case explicitly now that this is its own module."}
+]

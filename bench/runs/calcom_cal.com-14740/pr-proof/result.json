@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "calcom_cal.com-14740",
+ "seconds": 193,
+ "stderr": "",
+ "cost_usd": 1.5669011999999998,
+ "is_error": false,
+ "num_turns": 22,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Two of the seven drafts are confirmed so far. Validators for drafts 3\u20137 are still running; I'll finish writing `drafts.json` and the summary once they come back."
+}

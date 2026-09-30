@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "getsentry_sentry-67876",
+ "seconds": 122,
+ "stderr": "",
+ "cost_usd": 0.2607584,
+ "is_error": false,
+ "num_turns": 7,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote 6 review comments to `comments.json`, all on `src/sentry/integrations/github/integration.py`. I only read the code; I didn't run any tests.\n\n**Most serious:**\n1. **Crash on older integrations (line 503):** the new check reads `integration.metadata[\"sender\"][\"login\"]` directly. `sender` is only saved for integrations created from a webhook, and `installation.py` already handles it being missing. For any other existing integration, this line raises a `KeyError` and the user gets a 500 error page.\n2. **The new check can be skipped (line 481):** it only runs if the integration record already exists. On a normal fresh install, GitHub's installation webhook often hasn't arrived yet, so the pipeline moves on without comparing users. An attacker could enter someone else's `installation_id` in that window and link that installation to their own org.\n\n**Error handling:**\n3. **Line 423:** a network error while exchanging the code isn't caught, so it shows a 500 instead of the error page. Also, if the user declines authorization on GitHub, there's no `code` in the redirect, but the code still sends `code=None` to GitHub.\n4. **Line 434:** `get_user_info` raises an HTTP error when GitHub returns an error status, and nothing catches it.\n\n**Smaller points:**\n5. **Line 408:** the GitHub authorize URL is built by pasting values into a string, so `redirect_uri` isn't URL-encoded.\n6. **Line 412:** the `state` value is compared with `!=` rather than `constant_time_compare`, which the standard OAuth2 callback uses.\n\nThe diff also touches replays, monitors, search and SDK config. None of that relates to the PR's description, so I didn't review it. It's probably unrelated changes caught between the two commits being compared."
+}

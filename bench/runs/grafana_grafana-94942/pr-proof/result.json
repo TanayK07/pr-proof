@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "grafana_grafana-94942",
+ "seconds": 183,
+ "stderr": "",
+ "cost_usd": 1.2322992000000002,
+ "is_error": false,
+ "num_turns": 14,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Validators 2\u20134 are still running."
+}

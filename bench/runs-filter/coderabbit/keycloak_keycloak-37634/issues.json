@@ -1,0 +1,44 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Line 73 repeats the grantType null-check instead of checking rawTokenId, so rawTokenId == null can slip through and later be encoded as '...:null' instead of failing fast"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "The decoder assumes a fixed 2+2+2 prefix but the factory never validates that grant shortcuts are exactly 2 characters, meaning custom grants can emit token IDs that later fail to decode"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "The lazy refresh paths at Lines 106-137 bypass the one-time duplicate check, allowing a custom grant to overwrite an existing shortcut mapping at runtime"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Test catches RuntimeException instead of the specific parsing exception, making the test pass on unrelated failures like IndexOutOfBoundsException or NullPointerException"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "isAccessTokenId matcher has inverted logic - returns false when grant shortcut matches instead of when they do not match"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "isAccessTokenId matcher uses wrong substring indices - substring(3, 5) extracts characters at indices 3-4 ('ta') instead of the grant type which should be substring(4, 6)"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "grantType field is captured once in constructor but setFormParams() can replace parameters later without updating it, making getGrantType() return stale data"
+ }
+]

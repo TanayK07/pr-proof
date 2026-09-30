@@ -1,0 +1,11 @@
+{
+ "seconds": 38,
+ "stderr": "",
+ "cost_usd": 0.23604819999999999,
+ "is_error": false,
+ "num_turns": 5,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "All four review issues are correct. One is a real bug: the PR as written won't compile. The other three are small test and comment cleanups. I didn't change any code or post replies. The verdicts are in `verdicts.json` and the file parses as valid JSON.\n\n**Fewer, fix required:** 1 \u00b7 **Correct, optional:** 3 \u00b7 **Partly right / wrong / taste / question:** 0\n\n| # | Category | Verdict | Actionable | Evidence |\n|---|---|---|---|---|\n| 0 | Correctness | VALID | **YES** | `UsernameForm.java:47` calls `isConditionalPasskeysEnabled()` with no arguments. The only definition, at `UsernamePasswordForm.java:160`, takes a `UserModel`, and there's no no-argument version, so the build breaks. Passing `context.getUser()` fixes it. Inside that `getUser() != null` branch, the check then just asks whether passkeys are enabled, which is what the change intends. |\n| 1 | Best practice (tests) | VALID | OPTIONAL | At `PasskeysUsernamePasswordFormTest.java:291-296`, `findElement` never returns null; it throws `NoSuchElementException`. So the `assertThat(..., nullValue())` check never does anything. `catch (Exception)` is also too broad: it would hide unrelated browser-driver failures. The test does still catch the bug it's written for, because `fail()` throws an `AssertionError`, which isn't an `Exception` and so isn't swallowed. The neighbouring test `PasskeysUsernameFormTest.java:202` already uses `Assert.assertThrows(NoSuchElementException.class, ...)`, so the reviewer's fix matches existing code. |\n| 2 | Best practice (tests) | VALID | OPTIONAL | Same pattern as #1, at `PasskeysUsernamePasswordFormTest.java:312-317`. The same fix applies. |\n| 3 | Nitpick | VALID | OPTIONAL | `PasskeysUsernamePasswordFormTest.java:413` has \"Succesful\" in a comment. It's a typo only and doesn't affect behaviour. |\n\n**Recommended order:** fix #0 first, since the PR can't be merged until it compiles. Then optionally switch the try/catch blocks in #1 and #2 to `assertThrows`. The same pattern also appears in `PasskeysOrganizationAuthenticationTest`, so that file could get the same fix. Fix the typo in #3 last."
+}

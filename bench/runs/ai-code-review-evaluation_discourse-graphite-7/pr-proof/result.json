@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "ai-code-review-evaluation_discourse-graphite-7",
+ "seconds": 127,
+ "stderr": "",
+ "cost_usd": 0.8658702000000003,
+ "is_error": false,
+ "num_turns": 13,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR Review Summary (draft mode): 4 comments kept, none dropped\n\nThis PR wraps about 115 `scale-color($primary, \u2026)` calls across 32 stylesheets in `dark-light-choose(light, dark)`. That function returns its first argument on every light theme, including the default (`variables.scss:46-52`). So the first argument should be exactly the old expression, and almost every line in the PR does that, using `100% \u2212 x` on `$secondary` for dark themes. I checked every changed line in the diff with a script. Five lines change the light-theme value, which breaks the default theme even though the PR only meant to fix dark themes. All four comments below were checked by independent validators and came back VALID.\n\n### MEDIUM severity (2)\n- **`desktop/topic-post.scss:291`**: the post-header username link (`.topic-meta-data h5 a`) goes from 30% to 70% on light themes. With the default `#222` text colour that is about `#646464` \u2192 `#bdbdbd`, roughly 1.9:1 contrast on white. The two percentages were swapped; the fix is `30%` / `70%`.\n- **`mobile/modal.scss:102`**: the flag-modal `.custom-message-length` hint goes from 70% to 30%, so the faint hint turns dark. The percentages are swapped here too. The desktop version (`desktop/modal.scss:94`) already has the correct `70%` / `30%`.\n\n### LOW severity (2)\n- **`mobile/topic-post.scss:182`**: the topic-map `h3` goes from 20% to 50%, so it now looks the same as the `h4` below it. The fix is `20%` / `80%`.\n- **`desktop/user.scss:522`** (same change at `mobile/user.scss:497`): the group member `.name` goes from 30% to 50%, so it now looks the same as `.title`. The fix is `30%` / `70%`.\n\n### Dropped in validation (0)\n- None. One validator noticed that draft 3 cited the wrong desktop lines as examples. I changed it to cite `mobile/topic-post.scss:247` and `:270` in the same file.\n\nNothing was posted to GitHub, and the repository is unchanged. The drafts file is at `.../pr-proof/drafts.json` with `{\"kept\": [4], \"dropped\": []}`. The copy saved before validation is `drafts_raw.json`."
+}

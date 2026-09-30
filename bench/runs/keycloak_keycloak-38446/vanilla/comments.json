@@ -1,0 +1,52 @@
+[
+  {
+    "path": "server-spi-private/src/main/java/org/keycloak/utils/CredentialHelper.java",
+    "line": 123,
+    "body": "Security/contract concern: this sends the *raw, plaintext* recovery codes (JSON array) to the user storage provider via `updateCredential`, while the already-hashed `credentialModel` built by the caller is only used for local storage. Every federated provider that accepts this type will now store (and in the test provider, compare) plaintext recovery codes. Consider passing the hashed representation (e.g. the credentialModel's secret data) or at least documenting clearly what the provider receives, since this becomes the de\u2011facto SPI contract for `recovery-authn-codes` in `CredentialInputUpdater`."
+  },
+  {
+    "path": "server-spi-private/src/main/java/org/keycloak/utils/CredentialHelper.java",
+    "line": 125,
+    "body": "When the user storage accepts the credential, any previously stored local `recovery-authn-codes` credential is not removed (the old local path deleted the existing one in `RecoveryAuthnCodesCredentialProvider.createCredential`). A user that had local codes before the provider started supporting the type ends up with two active sets: `isValid` still falls back to local providers, so the old, supposedly regenerated codes keep working. Conversely, if the federated update returns false after previously succeeding, stale federated codes remain. Regeneration should invalidate the other store."
+  },
+  {
+    "path": "server-spi-private/src/main/java/org/keycloak/utils/CredentialHelper.java",
+    "line": 116,
+    "body": "Hardcoded provider id string `\"keycloak-recovery-authn-codes\"` duplicates `RecoveryAuthnCodesCredentialProviderFactory.PROVIDER_ID`; if it drifts, `getProvider` returns null and the local branch NPEs. Also the provider is looked up even when the federated path succeeds \u2014 move the lookup into the `else`."
+  },
+  {
+    "path": "services/src/main/java/org/keycloak/authentication/authenticators/browser/RecoveryAuthnCodesFormAuthenticator.java",
+    "line": 86,
+    "body": "With `getCredential` now possibly returning a *federated* credential, this `removeStoredCredentialById` only works for local storage \u2014 for federated codes it is a no-op (and the model returned by the test provider's `getCredentials` has no id at all, so this is called with null). More importantly, nothing ever consumes a used code in the user storage: the federated `isValid` path has no counterpart to `removeRecoveryAuthnCode()/updateStoredCredential`, so `allCodesUsed()` never becomes true and the same code can be replayed indefinitely. Recovery codes are one-time secrets; the federated flow needs a way to mark a code used (e.g. updateCredential/disable on the provider)."
+  },
+  {
+    "path": "services/src/main/java/org/keycloak/forms/login/freemarker/model/RecoveryAuthnCodeInputLoginBean.java",
+    "line": 21,
+    "body": "For federated credentials the model is rebuilt from the provider on each call and codes are never removed, so `getNextRecoveryAuthnCode()` will always prompt for code #1 forever. Combined with the missing consumption in the authenticator, the user is asked for (and can reuse) the same first code on every login. Also `credentialModelOpt.get()` still throws NoSuchElementException with no useful message when neither store has the credential; handle the empty case explicitly."
+  },
+  {
+    "path": "server-spi/src/main/java/org/keycloak/models/utils/RecoveryAuthnCodesUtils.java",
+    "line": 58,
+    "body": "`getFederatedCredentialsStream()` asks the provider for *all* credentials and the provider may do expensive work (the test provider re-hashes every code on each call). This helper is called from the login bean on every form render and from the authenticator, so it's invoked repeatedly per login. Also note the precedence: a federated credential shadows a local one, but `RecoveryAuthnCodesCredentialProvider.isValid` validates only against the local one \u2014 the displayed code number and the code actually validated can come from different stores if both exist."
+  },
+  {
+    "path": "testsuite/integration-arquillian/servers/auth-server/services/testsuite-providers/src/main/java/org/keycloak/testsuite/federation/BackwardsCompatibilityUserStorage.java",
+    "line": 232,
+    "body": "`getMyUser(user)` can return null (other methods such as `isConfiguredFor`/`getDisableableCredentialTypesStream` null-check it), but here `myUser.recoveryCodes` is dereferenced unconditionally \u2192 NPE for any user unknown to this provider, e.g. when the account console lists credentials. Also, now that `getCredentials` returns the OTP credential too, check this doesn't change existing account-console/OTP tests (duplicate entries next to the dummy representations)."
+  },
+  {
+    "path": "testsuite/integration-arquillian/servers/auth-server/services/testsuite-providers/src/main/java/org/keycloak/testsuite/federation/BackwardsCompatibilityUserStorage.java",
+    "line": 237,
+    "body": "The model returned here is created via `createFromValues`, which yields a credential without an id and always with all codes unused. The authenticator then calls `removeStoredCredentialById(null)` / relies on `allCodesUsed()`, which never triggers. The raw codes are stored in `credentialData` (not secretData) as plaintext."
+  },
+  {
+    "path": "testsuite/integration-arquillian/servers/auth-server/services/testsuite-providers/src/main/java/org/keycloak/testsuite/federation/BackwardsCompatibilityUserStorage.java",
+    "line": 340,
+    "body": "Validation accepts *any* stored code (`anyMatch`) rather than the requested next code, and never removes the used code, so codes are reusable and not order-bound \u2014 this diverges from the built-in provider semantics and the test (which always uses code index 0) cannot catch the missing consumption. The test should log in twice and assert that the second prompt asks for a different code / that the first code is rejected on reuse."
+  },
+  {
+    "path": "testsuite/integration-arquillian/servers/auth-server/services/testsuite-providers/src/main/java/org/keycloak/testsuite/federation/BackwardsCompatibilityUserStorage.java",
+    "line": 217,
+    "body": "`disableCredentialType` / `getDisableableCredentialTypesStream` weren't updated for the recovery codes type, so removing recovery codes for a federated user (account console / admin) won't clear `myUser.recoveryCodes`; the user can't delete them."
+  }
+]

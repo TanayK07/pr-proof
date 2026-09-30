@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "keycloak_keycloak-32918",
+ "seconds": 95,
+ "stderr": "",
+ "cost_usd": 0.5200284000000001,
+ "is_error": false,
+ "num_turns": 10,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote 5 review comments to `comments.json`. I found them by reading the code; I didn't build the project or run any tests.\n\n1. **Stale login cache on update (the main bug)** \u2014 `InfinispanIdentityProviderStorageProvider.java:93`. When deciding whether to clear the login cache on update, the \"before\" copy of the identity provider is checked through a wrapper that reports it as disabled whenever its organization is disabled. The database query that fills the cache ignores the organization's state, so that provider is still in the cached list.\n   - **How it breaks:** an organization is disabled, and one of its public providers is updated to \"hide on login\". Both the before and after checks say \"not a login provider\", so nothing is cleared. When the organization is re-enabled, the hidden provider still shows on the login page.\n   - **Fix:** check the stored, unwrapped copy instead (`idpDelegate.getById`), the same way `remove()` already does.\n\n2. **The shared login check now behaves differently** \u2014 `IdentityProviderStorageProvider.java:254`. The PR adds an \"organization-linked providers must be public\" rule to `getLoginPredicate()`. That same check decides which of a user's already-linked providers show on the login page when organizations are turned off. Such a user whose provider belongs to a non-public organization will no longer see it. I suggested putting the new rule in a separate check used only for the cache.\n\n3. **Callers must now filter disabled providers themselves** \u2014 line 246. Cached results come back as wrapped providers whose enabled state depends on the organization. `OrganizationAwareIdentityProviderBean` was updated to re-check this. `IdentityProviderBean.searchForIdentityProviders` and any custom extensions were not. The fix is either to filter here or to document that callers must do it.\n\n4. **Wasted cache entries for realm-only lookups** \u2014 line 223. With `REALM_ONLY`, the organization ID doesn't affect the result, but it's still part of the cache key. Each new organization ID adds a duplicate entry and rebuilds the whole cached query.\n\n5. **Test cleanup removes nothing** \u2014 `OrganizationCacheTest.java:380`. The cleanup deletes a provider named literally `\"alias\"`, not the ones the test created. The 21 test providers are never removed and can affect other tests in the class."
+}

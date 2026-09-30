@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "keycloak_keycloak-36882",
+ "seconds": 80,
+ "stderr": "",
+ "cost_usd": 0.40471039999999997,
+ "is_error": false,
+ "num_turns": 8,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote 10 review comments to `comments.json`; the file is valid JSON and nothing in the repo was changed. The most serious problem isn't in the rolling-updates code: the diff also undoes several unrelated features, one of them a security check.\n\n**Unrelated reverts (look like a bad rebase):**\n- **Device-code deny check removed** (`LoginActionsService.java:1022`): a device code the user already denied can still go through consent and get it granted. The matching tests are deleted too. This is a security regression.\n- **`force-login` option removed from the Send Reset Email authenticator** (`ResetCredentialEmail.java:73`): realms that set it to true will quietly stop forcing a new login after a password reset. Its docs, release note and tests are removed too.\n- **Other leftovers:** API response annotations removed from the group-create endpoint, and two admin UI message keys changed.\n\n**Rolling-updates changes:**\n- **Possible crash in `BaseUpgradeLogic.java:145`:** `envVar.getValueFrom()` is called without a null check. An env var with neither a value nor `valueFrom` would crash the whole reconcile.\n- **Env var changes that go unnoticed (line 147):** only the secret *name* is compared, so pointing at a different key in the same secret is missed. Env vars from config maps and other sources are now filtered out entirely. The old code compared the full env var.\n- **Sorting args before comparing (line 120):** this hides changes where order matters, such as the leading command or repeated options.\n- **Docs promise a check the operator doesn't make:** `advanced-configuration.adoc:449` says the operator fails without `rolling-updates` enabled, but it never looks at the enabled features.\n- **Exit codes changed:** the \"recreate needed\" code moves from 4 to 3, and 4 now means \"feature disabled\". Anything scripted against the old codes will misread results, and there's no upgrade note.\n- **Feature check might be too strict** (`UpdateCompatibilityCheck.java:46`, flagged as a question, not a confirmed bug): it's unclear whether `--features=rolling-updates` passed to this command is actually applied before the check runs, especially on an optimized server. If not, the command the docs suggest would still be rejected."
+}

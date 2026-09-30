@@ -1,0 +1,32 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Ruff flags both parameters (attribute, sync_source) as unused in the default should_sync implementation, which may cause CI lint failures"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "ExampleIntegration.sync_status_outbound method lacks **kwargs and will raise TypeError when called with the new assignment_source parameter"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "timezone.now() is evaluated at class definition time for the queued field default, causing all instances to share the same timestamp instead of capturing current time per instance"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Test method name 'test_from_dict_empty_array' is a typo - should be 'test_from_dict_empty_dict' since the test uses an empty dict"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Test method name 'test_from_dict_inalid_data' is a typo - should be 'test_from_dict_invalid_data'"
+ }
+]

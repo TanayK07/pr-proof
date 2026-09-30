@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "grafana_grafana-107534",
+ "seconds": 84,
+ "stderr": "",
+ "cost_usd": 0.2579726,
+ "is_error": false,
+ "num_turns": 7,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote three review comments to `comments.json`. The main problem is that queries now get interpolated twice.\n\n1. **`querySplitting.ts:299`**: `runSplitQuery` now calls `applyTemplateVariables` itself. The split requests then go through `runQuery` to `super.query()`, and `DataSourceWithBackend.query` calls `applyTemplateVariables` again at `DataSourceWithBackend.ts:185`. Two things go wrong:\n   - **Ad hoc filters are added twice.** For parsed labels the query ends up with `| key=\"v\" | key=\"v\"`.\n   - **Values containing `$` are expanded again.** A regex like `foo$` or literal text like `$__interval` changes on the second pass, so the query that runs isn't the one the user entered.\n\n2. **`shardQuerySplitting.ts:52`**: The old code interpolated without filters, so ad hoc filters were only added once, by the backend path. Now `request.filters` is applied here and again inside `runQuery`, and the shard selector is built from the already-filtered expression. The old helper also set `datasource: this.getRef()` on each query; the new call doesn't. `DataSourceWithBackend.query` reads that value to decide whether to apply template variables.\n\n3. **`shardQuerySplitting.test.ts:112`**: The updated assertion `toHaveBeenCalledTimes(5)` (was 1) treats the double interpolation as expected behaviour. The test should check each query is interpolated exactly once.\n\nI didn't run the tests. The double interpolation comes from reading the code path, and the call count in the updated test backs it up."
+}

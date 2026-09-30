@@ -1,0 +1,61 @@
+{
+ "kept": [
+  {
+   "id": 2,
+   "path": "pkg/expr/sql/parser.go",
+   "line": 23,
+   "severity": "LOW",
+   "category": "ISSUE",
+   "claim": "On the legacy (non-expressionParser) path, SQL expressions now fail inside TablesList with a stub 'not implemented' error that NewSQLCommand turns into a 400 'error reading SQL command' plus Error/Warn logs, so users are told their SQL is invalid rather than that the feature is disabled, which is inconsistent with the reader path.",
+   "body": "## [ISSUE] Legacy path reports disabled SQL expressions as \"invalid SQL\"\n\n**Severity:** LOW \u2014 wrong error message and log noise; no security impact.\n\n### The Problem\n\nWhen `expressionParser` is off, `nodes.go:159-160` calls `UnmarshalSQLCommand` -> `NewSQLCommand` -> `sql.TablesList`. `TablesList` now calls the stub `DB.RunCommands`, which always returns `errors.New(\"not implemented\")`:\n\n```go\nduckDB := NewInMemoryDB()\n...\nret, err := duckDB.RunCommands([]string{cmd})\nif err != nil {\n\tlogger.Error(\"error serializing sql\", \"error\", err.Error(), \"sql\", rawSQL, \"cmd\", cmd)\n\treturn nil, fmt.Errorf(\"error serializing sql: %s\", err.Error())\n}\n```\n\n`NewSQLCommand` (`sql_command.go:30-35`) then logs `invalid sql query` at Warn and returns `errutil.BadRequest(\"sql-invalid-sql\", WithPublicMessage(\"error reading SQL command\"))`.\n\n### Theory / Proof\n\n- The user is told their SQL is malformed (400) when the feature is really turned off. The reader path (`reader.go:129-132`) says `sqlExpressions is not implemented`, so the same request gets a different error depending on the `expressionParser` flag.\n- Each such request writes an Error log line with the raw SQL, plus a Warn line, for what is expected behaviour.\n\n### Recommendation\n\nFail fast with one explicit error at the command entry point so both paths agree:\n\n```go\nfunc NewSQLCommand(refID, rawSQL string) (*SQLCommand, error) {\n\treturn nil, errutil.NotImplemented(\"sql-expressions-disabled\",\n\t\terrutil.WithPublicMessage(\"SQL expressions are not implemented\"))\n}\n```\n\n(`errutil.NotImplemented` exists at `pkg/apimachinery/errutil/errors.go:182`.) Alternatively, check at `nodes.go:159`.\n",
+   "verdict": "VALID",
+   "evidence": "nodes.go:123/159-160: when expressionParser is off, requests go UnmarshalSQLCommand -> NewSQLCommand -> TablesList -> stub RunCommands error (db.go:16-18). The result is logger.Error with raw SQL (parser.go:28), a Warn, and a BadRequest 'error reading SQL command' (sql_command.go:31-35). The reader path instead returns 'sqlExpressions is not implemented' (reader.go:129-132). Misleading and inconsistent errors; low impact."
+  },
+  {
+   "id": 3,
+   "path": "pkg/expr/reader.go",
+   "line": 131,
+   "severity": "MEDIUM",
+   "category": "GAP ANALYSIS",
+   "claim": "The CVE-2024-9264 fix adds no regression test: all existing SQL tests are t.Skip()'d and nothing asserts that a `type: sql` expression is rejected by ExpressionQueryReader or by the legacy nodes.go path, even with the sqlExpressions flag enabled.",
+   "body": "## [GAP ANALYSIS] No regression test locks in the CVE-2024-9264 fix\n\n**Severity:** MEDIUM \u2014 a critical-severity fix has no test to catch it being re-enabled.\n\n### The Problem\n\nThe PR disables SQL expressions in two places: the reader gate (`reader.go:129-132`) and the stub `DB` (`pkg/expr/sql/db.go`). No test covers either one:\n\n- `pkg/expr/sql/parser_test.go`: every test starts with `t.Skip()`.\n- `pkg/expr/sql_command_test.go`: `TestNewCommand` starts with `t.Skip()`.\n- `pkg/expr/reader_test.go` has no SQL case.\n\n### Theory / Proof\n\nThe fix only works if two things stay true: `enableSqlExpressions` always returns `false`, and `sql.DB` never executes anything. Both are plain code that anyone can change (see the inverted logic in `enableSqlExpressions`). If a later refactor or a new SQL engine re-enables the path, CI will not catch it, because the only tests nearby are skipped.\n\n### Recommendation\n\nAdd a regression test that turns the flag **on** and checks that both paths still reject SQL:\n\n```go\nfunc TestSQLExpressionsDisabled(t *testing.T) {\n\tfeatures := featuremgmt.WithFeatures(featuremgmt.FlagSqlExpressions)\n\treader := NewExpressionQueryReader(features)\n\titer, err := jsoniter.ParseString(jsoniter.ConfigDefault,\n\t\t`{\"refId\":\"B\",\"type\":\"sql\",\"expression\":\"SELECT * FROM read_csv('/etc/passwd')\"}`)\n\trequire.NoError(t, err)\n\t_, err = reader.ReadQuery(data.NewDataQuery(map[string]any{\"refId\": \"B\", \"type\": \"sql\"}), iter)\n\trequire.Error(t, err)\n\n\t_, err = NewSQLCommand(\"B\", \"SELECT 1\")\n\trequire.Error(t, err)\n}\n```\n",
+   "verdict": "VALID",
+   "evidence": "reader_test.go has no SQL case. sql_command_test.go:9 and every test in parser_test.go start with t.Skip(). No test for db.go. Both safeguards (the reader gate and the stub DB) could be reverted without CI failing."
+  },
+  {
+   "id": 4,
+   "path": "pkg/expr/reader.go",
+   "line": 130,
+   "severity": "LOW",
+   "category": "GAP ANALYSIS",
+   "claim": "The sqlExpressions flag still enables the SQL option in the expression editor (public/app/features/expressions/types.ts:69-74) and is still described as 'SQL and DuckDB functions' in registry.go, but the backend now always rejects it, so anyone with the flag on is offered a feature that always fails.",
+   "body": "## [GAP ANALYSIS] Frontend and flag registry still advertise DuckDB SQL expressions\n\n**Severity:** LOW \u2014 confusing UX for instances with the experimental flag on.\n\n### The Problem\n\nThe backend now rejects `type: sql` no matter what the flag says (`reader.go:129-132`, plus the stub `sql.DB`). But:\n\n- `public/app/features/expressions/types.ts:67-74` still adds `{ label: 'SQL', description: 'Transform data using SQL. Supports Aggregate/Analytics functions from DuckDB' }` whenever `config.featureToggles?.sqlExpressions` is true.\n- `pkg/services/featuremgmt/registry.go:1083-1084` still describes the flag as \"Enables using SQL and DuckDB functions as Expressions.\"\n\n### Theory / Proof\n\nThe PR's goal is to remove references to DuckDB. Anyone who kept the experimental flag on will see a SQL option that promises DuckDB functions and then always fails, with either `sqlExpressions is not implemented` or `error reading SQL command` depending on `expressionParser`.\n\n### Recommendation\n\nHide the option in the UI and update the flag description in the same change:\n\n```ts\n].filter((expr) => expr.value !== ExpressionQueryType.sql);\n```\n\n```go\nDescription: \"Enables SQL Expressions (currently disabled; not implemented).\",\n```\n\nThen run `make gen-feature-toggles` to regenerate the toggle files.\n",
+   "verdict": "VALID",
+   "evidence": "types.ts:67-77 still shows the 'SQL ... DuckDB' option when the flag is on, and registry.go:1083-1084 still describes the flag with DuckDB. The backend always rejects type sql (reader.go, db.go)."
+  }
+ ],
+ "dropped": [
+  {
+   "id": 1,
+   "path": "pkg/expr/reader.go",
+   "line": 195,
+   "severity": "MEDIUM",
+   "category": "ISSUE",
+   "claim": "enableSqlExpressions evaluates the sqlExpressions flag, inverts it into a variable named `enabled`, and then returns false on both branches, so the flag lookup is dead code whose naming reads as the opposite of what it does.",
+   "body": "## [ISSUE] `enableSqlExpressions` reads the flag, inverts it, then ignores it\n\n**Severity:** MEDIUM \u2014 the security kill switch is correct today but is written in a way that invites someone to 'fix' it back on.\n\n### The Problem\n\n```go\nfunc enableSqlExpressions(h *ExpressionQueryReader) bool {\n\tenabled := !h.features.IsEnabledGlobally(featuremgmt.FlagSqlExpressions)\n\tif enabled {\n\t\treturn false\n\t}\n\treturn false\n}\n```\n\n- `enabled` holds `true` when the flag is **off**, so the name means the opposite of its value.\n- Both branches return `false`, so the `IsEnabledGlobally` call has no effect.\n\n### Theory / Proof\n\nThis function is the only gate for `QueryTypeSQL` on the `ExpressionQueryReader` path (`reader.go:128-132`), and that path is used both by the query API (`pkg/registry/apis/query/register.go:56`) and by `nodes.go:132` when `expressionParser` is on. The CVE-2024-9264 fix depends on it always returning `false`. A reader who sees `if enabled { return false }` will take it for an inverted-condition bug. The obvious 'fix' (`return true` in the fall-through branch, or dropping the `!`) turns SQL expressions back on for anyone who has `sqlExpressions` set. The flag is still in `registry.go:1083` and the frontend still honours it.\n\n### Today vs. what breaks\n\nToday: always returns `false`, so it is safe. It breaks as soon as someone tidies up the logic: one changed token re-enables the feature.\n\n### Recommendation\n\nState the intent directly and drop the flag lookup:\n\n```go\ncase QueryTypeSQL:\n\t// SQL expressions are disabled unconditionally (CVE-2024-9264); the\n\t// sqlExpressions feature flag is intentionally ignored until a safe\n\t// engine replaces DuckDB.\n\treturn eq, fmt.Errorf(\"sqlExpressions is not implemented\")\n```\n\nor keep a helper that plainly returns `false` with that comment.\n",
+   "verdict": "STYLE_PREFERENCE",
+   "evidence": "reader.go:194-200 always returns false, so the gate is correct. The 'someone might fix it' risk is a guess about a future edit, and even with the gate removed, the stub DB (sql/db.go) still rejects every call via TablesList -> BadRequest (sql_command.go:30-35). Readability only."
+  },
+  {
+   "id": 5,
+   "path": "pkg/expr/sql/parser.go",
+   "line": 25,
+   "severity": "LOW",
+   "category": "ISSUE",
+   "claim": "TablesList still builds a DuckDB command by pasting user SQL into `SELECT json_serialize_sql('%s')` with only single-quote doubling; the stub DB makes this harmless now, but whoever plugs an engine into sql.DB brings back an injection-style surface, and the dead code should be removed rather than kept.",
+   "body": "## [ISSUE] Retained string-built DuckDB command is a latent injection surface\n\n**Severity:** LOW \u2014 harmless while `sql.DB` is a stub; dangerous if the stub is ever given a real engine.\n\n### The Problem\n\n```go\nrawSQL = strings.Replace(rawSQL, \"'\", \"''\", -1)\ncmd := fmt.Sprintf(\"SELECT json_serialize_sql('%s')\", rawSQL)\nret, err := duckDB.RunCommands([]string{cmd})\n```\n\nUser input is pasted into a SQL string, and escaping single quotes is the only protection. Note that `json_serialize_sql` is DuckDB-specific.\n\n### Theory / Proof\n\n`sql.DB` keeps the same method set as `go-duck`'s `DB` (`TablesList`, `RunCommands`, `QueryFramesInto`) and the same constructor name, so a real engine can be dropped straight back in. If that happens, this code again sends a string built from user input to a SQL engine, which is the same kind of exposure behind CVE-2024-9264. The escaping only accounts for DuckDB's quoting rules.\n\n### Recommendation\n\nThe function can no longer succeed, so remove the command construction and return a clear error:\n\n```go\nfunc TablesList(rawSQL string) ([]string, error) {\n\treturn nil, errors.New(\"sql expressions are not implemented\")\n}\n```\n\nKeep `tablesFromAST` if you want, for a future parser that does not route user text through a SQL engine.\n",
+   "verdict": "INVALID",
+   "evidence": "The stub RunCommands (db.go:16-18) never runs anything, so there is no current path. Execute passes raw user SQL to QueryFramesInto by design, so escaping in TablesList would never be the security boundary. Speculative cleanup."
+  }
+ ]
+}

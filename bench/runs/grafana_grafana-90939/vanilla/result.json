@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "grafana_grafana-90939",
+ "seconds": 65,
+ "stderr": "",
+ "cost_usd": 0.2719746,
+ "is_error": false,
+ "num_turns": 9,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote four review comments to `bench/runs/grafana_grafana-90939/vanilla/comments.json`. They're all on `pkg/api/webassets/webassets.go`, which is the only file this commit actually changes. The other ~140 files in the diff are unrelated identity-type renames and reverts that come from the base commit, not this PR, so I didn't review them.\n\nThe fix does remove the data race, but it has these problems:\n\n1. **No re-check after taking the write lock (line 48\u201349).** On a cold start, every request that arrives at once finds the cache empty and waits for the lock. Each one then reloads and re-parses `assets-manifest.json` in turn, even though the first one already filled the cache. The fix is to check the cache again after `Lock()`, or to use `sync.Once` or singleflight.\n2. **File and network I/O run while holding the global lock, using one request's context (line 56).** If the CDN path is enabled, a slow fetch blocks every caller: the index page, `/api/frontend/assets`, and the panic-recovery page. If that first request is cancelled, the fetch fails and every waiting request repeats it.\n3. **A failed load wipes the cache (line 69).** On error the result is nil, and it's stored anyway. One temporary failure throws away the last good value, which matters most in Dev mode. It should only be stored when there's no error.\n4. **Dev mode serializes every asset request (line 48).** Every call takes the exclusive lock and re-reads the file. That's minor for dev, but the read could happen outside the lock, with the lock held only to swap in the new value."
+}

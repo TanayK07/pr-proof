@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "ai-code-review-evaluation_discourse-graphite-6",
+ "seconds": 36,
+ "stderr": "",
+ "cost_usd": 0.1279196,
+ "is_error": false,
+ "num_turns": 4,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote four review comments to `comments.json`, all on the new `website_name` method in `app/serializers/user_serializer.rb`. The most serious are the first two.\n\n1. **Misnamed include method (line 153):** it's `include_website_name`, without the trailing `?`. The serializer only calls `include_<attr>?`, so this method never runs, and `website_name` is sent for every user (as `null` when they have no website).\n2. **Wrong \"same parent domain\" check (line 144):** it drops the first part of each host name and compares the rest. That makes unrelated sites look like our own domain:\n   - `foo.co.uk` matches `forum.co.uk`.\n   - `attacker.github.io` matches `forum.github.io`.\n\n   In those cases an outside site gets its full URL path shown as if it belonged to this instance. The check also misses a real match: `www.example.com` against `example.com` shows only the host.\n3. **Host matching and URLs without a scheme (line 138):**\n   - Host names are compared case-sensitively, so `Example.com` doesn't match `example.com`.\n   - A website entered without a scheme (e.g. `example.com/user`) gets no `website_name`, so the profile now hides the website completely.\n4. **Minor (line 147):** `\".\" << website_host` modifies a string literal, which raises an error if the file is ever marked with `# frozen_string_literal: true`. The method also parses the URL up to three times and splits the instance host name repeatedly."
+}

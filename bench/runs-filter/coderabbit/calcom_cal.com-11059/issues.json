@@ -1,0 +1,116 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Handler accepts any HTTP method but should enforce POST with a 405 response like other webhook handlers"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Header lookup is case-sensitive - if CALCOM_WEBHOOK_HEADER_NAME is set in mixed case, lookup will fail because Node.js normalizes incoming headers to lowercase"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Header lookup doesn't handle arrays - if the header is sent multiple times, req.headers[...] will be an array and comparison against a string will incorrectly allow the request through"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "appCredentialWebhookRequestBodySchema.parse can throw on invalid payload, turning bad input into 500s instead of 400s"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "JSON.parse(symmetricDecrypt(...)) can throw on decrypt/JSON errors, turning bad input into 500s instead of 400s"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "minimumTokenResponseSchema uses [z.string().toString()] which yields a literal key and makes it required, so real token payloads will fail validation"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "parseRefreshTokenResponse overwrites missing refresh tokens with placeholder 'refresh_token' string, which will clobber valid refresh tokens downstream and break future refreshes"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "refreshOAuthTokens returns a Response object when credential sharing is enabled but returns refreshFunction() result otherwise - callers expect .data property which doesn't exist on Response objects"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "No error handling for the fetch call in refreshOAuthTokens - network failures throw unhandled exceptions"
+ },
+ {
+  "id": 9,
+  "path": null,
+  "line": null,
+  "issue": "No timeout on the external fetch in refreshOAuthTokens, risking indefinite hangs"
+ },
+ {
+  "id": 10,
+  "path": null,
+  "line": null,
+  "issue": "The () => any type signature in refreshOAuthTokens provides no type safety"
+ },
+ {
+  "id": 11,
+  "path": null,
+  "line": null,
+  "issue": "No response validation in refreshOAuthTokens - the fetch response status and content aren't checked"
+ },
+ {
+  "id": 12,
+  "path": null,
+  "line": null,
+  "issue": "Missing prisma import in salesforce/lib/CalendarService.ts for credential update"
+ },
+ {
+  "id": 13,
+  "path": null,
+  "line": null,
+  "issue": "zoho-bigin/lib/CalendarService.ts passes credentialId instead of credential.userId to refreshOAuthTokens, causing sync to target wrong subject"
+ },
+ {
+  "id": 14,
+  "path": null,
+  "line": null,
+  "issue": "zohocrm/lib/CalendarService.ts caller expects AxiosResponse with .data property but refreshOAuthTokens can return fetch Response, causing runtime error"
+ },
+ {
+  "id": 15,
+  "path": null,
+  "line": null,
+  "issue": "Read-then-write pattern for credential upsert can create duplicates under concurrent requests without unique constraint"
+ },
+ {
+  "id": 16,
+  "path": null,
+  "line": null,
+  "issue": "office365calendar/lib/CalendarService.ts silently persists stale credentials if token parsing fails instead of throwing error"
+ },
+ {
+  "id": 17,
+  "path": null,
+  "line": null,
+  "issue": "salesforce/lib/CalendarService.ts uses stale credentialKey values when creating jsforce connection instead of refreshed token values"
+ },
+ {
+  "id": 18,
+  "path": null,
+  "line": null,
+  "issue": "googlecalendar/lib/CalendarService.ts stores entire parseRefreshTokenResponse wrapper object as credential key instead of extracting .data property"
+ }
+]

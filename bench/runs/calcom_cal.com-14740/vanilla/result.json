@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "calcom_cal.com-14740",
+ "seconds": 55,
+ "stderr": "",
+ "cost_usd": 0.2823582,
+ "is_error": false,
+ "num_turns": 5,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote 12 review comments to `bench/runs/calcom_cal.com-14740/vanilla/comments.json`; I didn't change the repository. These findings come from reading the code; I didn't run anything. The most important ones:\n\n**Permissions and abuse**\n- **Team admins are locked out:** the permission check uses `isTeamAdmin && isTeamOwner`. `isTeamAdmin` already matches both admins and owners, so in practice only owners pass. It should be `||`, or just `isTeamAdmin`.\n- **Attendees can spam through the organizer:** any attendee can add any number of email addresses. Each one gets an invite from the organizer's name and is pushed into the organizer's calendar event.\n- **No size limits on the guest list:** the schema accepts an empty list and has no maximum, so one request can send an unlimited number of emails.\n\n**Wrong behaviour**\n- **Wrong calendar credentials:** `EventManager` is built with the requesting user's credentials, not the booking organizer's. When an admin or attendee adds guests, the organizer's calendar event won't get them.\n- **Error after a successful save:** the calendar update runs after the new guests are saved and has no error handling. If it fails, the user sees an error even though the guests were added, and no emails go out. Retrying then fails with a \"must be unique\" error.\n- **Wrong email to existing attendees:** emails are sent using the raw `guests` input instead of the filtered `uniqueGuests`. Anyone submitted who was already an attendee gets a \"new booking\" email instead of the \"guests added\" notice.\n- **Blocklist bypass:** blocklisted addresses are lowercased but the submitted emails aren't, so a differently-capitalised address gets through. The duplicate check against existing attendees is also case-sensitive.\n- **No status or booking-type checks:**\n  - Guests can be added to cancelled or past bookings.\n  - Seated events aren't handled, so seat limits are bypassed.\n  - For recurring bookings, only one occurrence is updated in the database.\n- **Unhandled error for bookings with no user:** `booking.userId || 0` plus `findFirstOrThrow` produces a 500 instead of a proper error.\n\n**Smaller issues**\n- **Dialog error handling:**\n  - The error toast's fallback message can never appear, because the message it falls back from is never empty.\n  - The \"invalid email\" warning never clears after the user fixes the input.\n- **Email template choice:** `sendAddGuestsEmails` picks the template with an exact-match comparison against the raw input."
+}

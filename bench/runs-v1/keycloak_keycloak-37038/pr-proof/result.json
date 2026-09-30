@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "keycloak_keycloak-37038",
+ "seconds": 269,
+ "stderr": "",
+ "cost_usd": 1.895508,
+ "is_error": false,
+ "num_turns": 26,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Both validators are running. I'll write the final `kept`/`dropped` file when their verdicts arrive."
+}

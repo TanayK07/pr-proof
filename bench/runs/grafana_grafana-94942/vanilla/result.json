@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "grafana_grafana-94942",
+ "seconds": 50,
+ "stderr": "",
+ "cost_usd": 0.21760039999999997,
+ "is_error": false,
+ "num_turns": 7,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote five review comments to `bench/runs/grafana_grafana-94942/vanilla/comments.json`; I didn't modify the repo or run any tests. Note the title and description don't match: the title says \"Advanced SQL Analytics Framework\", but the change removes the DuckDB engine and turns SQL expressions off.\n\n1. **`pkg/expr/reader.go:195`**: `enableSqlExpressions` never actually uses the feature flag. It negates the flag lookup, and then both branches return `false`. If someone later \"fixes\" the confusing negation, they could turn the unsafe path back on without meaning to. It should either say plainly that it's always off, or just return the flag value.\n2. **`pkg/expr/reader.go:131`**: only one of the two ways in is blocked. The older path in `nodes.go` (used when the `expressionParser` flag is off) never checks the switch. SQL is rejected there only because the placeholder database returns an error, so users get a misleading \"error reading SQL command\". Also, the new error is a plain `fmt.Errorf` rather than an `errutil` error with a public message, so it may come back as a server error instead of a 4xx.\n3. **`pkg/expr/sql/parser.go:24`**: the pattern behind the vulnerability (CVE-2024-9264) is still in place. User SQL is pasted into a query string, and the only protection is doubling single quotes. It's harmless now only because the database is a stub, and plugging a real engine back in would reopen the hole.\n4. **`pkg/expr/sql/db.go:9`**: the new placeholder database has no comment explaining it's deliberately a no-op. Callers still log warnings and errors that look like the user wrote bad SQL. A named error such as `ErrSQLExpressionsDisabled` would let them report it properly.\n5. **`pkg/expr/sql_command.go:100`**: nothing tests the fix. Every SQL test is skipped, so no test checks that SQL expressions are refused on either path."
+}

@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "ai-code-review-evaluation_discourse-graphite-2",
+ "seconds": 154,
+ "stderr": "",
+ "cost_usd": 0.9193131999999999,
+ "is_error": false,
+ "num_turns": 11,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR review (draft, not posted): 3 comments kept, 1 dropped in validation\n\nI wrote 4 draft comments and had each one checked by a separate validator. Nothing was sent to GitHub and the repository is unchanged. The unvalidated drafts are in `drafts_raw.json`, and `drafts.json` holds `{\"kept\": [...], \"dropped\": [...]}` with each validator's verdict and evidence.\n\n### HIGH (1)\n- **`app/controllers/topics_controller.rb:107`**: The unsubscribe link changes the notification level on a plain GET, and the result depends on the current level. Each visit steps it down: watching \u2192 regular \u2192 muted. So refreshing the page, clicking the link a second time, or a logged-in browser prefetching it ends up muting the topic without the user meaning to.\n  - I narrowed the wording after validation. Most mail scanners have no Discourse session, so `ensure_logged_in` stops them; the real triggers are reloads, repeat clicks and prefetch in a logged-in browser.\n  - Suggested fix: always set one level through `TopicUser.change`, or show a confirmation page and make the change with a POST.\n\n### MEDIUM (2)\n- **`topics_controller.rb:105`**: `TopicUser.find_by(...)` can return nil, and the next line calls `tu.notification_level` without a check. The URL has no user-specific token, so any logged-in user who has never visited the topic gets a 500 (for example, from a forwarded email). The direct `tu.save!` also skips what `TopicUser.change` does: it sets the reason and changed-at fields, and it notifies the user's open tabs so their dropdown updates.\n- **`topics_controller.rb:108`**: For a watching or tracking user, the first click only lowers the level to Regular. Regular still sends reply, mention and quote emails, which are the emails that carry this link. The landing page, though, says \"You will stop receiving notifications for {title}\". Suggested fix: set the topic to muted directly, or change the wording to match what actually happens.\n\n### Dropped in validation (1)\n- **`List-Unsubscribe` header still points at the user preferences page instead of the new per-topic URL.** The validator rated this a style preference. The PR didn't touch that line. The per-topic URL needs a login and changes state on every GET, so it isn't safe to hand to mail clients' built-in unsubscribe buttons; pointing them at preferences is a reasonable choice.\n\nThere is no PR link because this was a local draft run with no network access."
+}

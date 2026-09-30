@@ -1,0 +1,26 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Line 125 returns on the user-storage path without removing any existing local recovery-code credentials, leaving stale DB entries in the database after a successful user-storage write"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Lines 19 and 21 call .get() on Optionals that may be empty (RecoveryAuthnCodesUtils.getCredential(user) and getNextRecoveryAuthnCode()), which will throw NoSuchElementException if either is empty during login form rendering"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Lines 197-200 only store raw codes and Lines 237-242 rebuild a new RecoveryAuthnCodesCredentialModel with createFromValues() which drops the id generated on Line 195 and renumbers codes from 1..n, causing issues with deleting exhausted federated credentials and prompting for wrong code numbers"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Line 340 only checks whether the submitted code exists but never updates the stored list, allowing the same recovery code to be replayed indefinitely and preventing the federated path from reaching exhausted-credential cleanup"
+ }
+]

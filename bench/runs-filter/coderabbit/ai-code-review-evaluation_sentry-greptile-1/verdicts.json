@@ -1,0 +1,38 @@
+[
+  {
+    "id": 0,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "src/sentry/api/endpoints/organization_auditlogs.py:71 evaluates `request.user.is_superuser or organization_context.member.has_global_access`. src/sentry/organizations/services/organization/model.py:344-346 declares `member: RpcOrganizationMember | None = None` and says it is None when the user has no membership. OrganizationAuditPermission (src/sentry/api/bases/organization.py:110-124) extends OrganizationPermission, which also admits active staff and org-level/API-token auth. In those cases `request.user.is_superuser` is False and member is None, so the attribute access raises AttributeError and the endpoint returns 500. The expression runs on every request, even without optimized_pagination=true, so this breaks the endpoint for those callers regardless of the flag. Fix: check `member is not None` (or use is_active_superuser(request)) and evaluate it only when use_optimized is set."
+  },
+  {
+    "id": 1,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "src/sentry/api/paginator.py:838-840: OptimizedCursorPaginator.get_item_key does `int(math.floor(value) ...)` where value is `getattr(item, self.key)`. The endpoint (organization_auditlogs.py:79-80) passes order_by='-datetime', so value is a datetime and math.floor raises TypeError. build_cursor calls key=self.get_item_key on the results (paginator.py:896-905), so any optimized request that returns rows crashes. Compare DateTimePaginator.get_item_key (paginator.py:231-234), which first converts via strftime('%s.%f') * multiplier."
+  },
+  {
+    "id": 2,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "src/sentry/api/paginator.py:842-843: value_from_cursor returns the raw int/float cursor.value. build_queryset (paginator.py:112-125) appends it as the parameter in `datetime <= %s` / `>= %s`. That compares a timestamp column to a millisecond integer, which fails in Postgres (no timestamp-vs-integer operator) and would be semantically wrong even if it ran. DateTimePaginator.value_from_cursor (paginator.py:236-239) converts with datetime.fromtimestamp(value/1000, utc). A client can send such a cursor directly, since Cursor.from_string accepts any number (src/sentry/utils/cursors.py:55-63)."
+  },
+  {
+    "id": 3,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "src/sentry/api/paginator.py:179-184 (BasePaginator.get_result, changed in this PR): the comment says negative offsets are allowed and that 'the underlying queryset will handle boundary conditions'. The code actually clamps forward cursors to 0 (`max(0, offset) if not cursor.is_prev`) and passes negative offsets through only for is_prev. Cursor.from_string (utils/cursors.py:59-60) accepts a negative offset such as '123:-5:1'. With Django 5.2.1 (requirements-frozen.txt:36), QuerySet.__getitem__ raises ValueError('Negative indexing is not supported.'). paginate() (src/sentry/api/base.py:525-540) catches only BadPaginationError, so the request returns 500. Other paginators reject this input explicitly (paginator.py:287, 351, 701, 748: raise BadPaginationError). The comment is misleading and the prev path still crashes, so negative offsets should be rejected with BadPaginationError."
+  },
+  {
+    "id": 4,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "src/sentry/api/paginator.py:874-881: when enable_advanced_features and cursor.offset < 0, the code runs `queryset[start_offset:stop]` with a negative start. The comment says 'The underlying Django ORM properly handles negative slicing automatically', which is false. Django 5.2.1 (requirements-frozen.txt:36) raises ValueError('Negative indexing is not supported.') for a negative slice start. paginate() (api/base.py:540) does not catch ValueError, so the request returns 500. The endpoint sets enable_advanced_features=True for superusers and global-access members (organization_auditlogs.py:71-82), and the negative offset is user-controlled via the cursor query param (utils/cursors.py:59-60). The 'access to data beyond normal pagination bounds' framing is also a red flag. The branch should be removed and negative offsets rejected with BadPaginationError."
+  },
+  {
+    "id": 5,
+    "verdict": "VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "src/sentry/utils/cursors.py:26-27: the PR adds only a two-line comment ('Performance optimization: Allow negative offsets ... efficient reverse pagination') above the unchanged `self.offset = int(offset)`. The diff against a5d29095 shows no behavioral change in Cursor. The comment describes behavior Cursor doesn't implement, and the negative-offset path it refers to (paginator.py:874-881) crashes anyway. Low impact, since it is only a comment, but it is misleading and should be removed."
+  }
+]

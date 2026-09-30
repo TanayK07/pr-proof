@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "getsentry_sentry-80528",
+ "seconds": 113,
+ "stderr": "",
+ "cost_usd": 0.5556264,
+ "is_error": false,
+ "num_turns": 10,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR Review Summary (draft mode): 2 comments kept, 0 dropped in validation\n\nThe PR is a clean refactor. It moves `mark_failed_threshold` to `logic/incidents.py` as `try_incident_threshold`, moves `create_issue_platform_occurrence` to `logic/incident_occurrence.py` as `create_incident_occurrence`, and moves `SimpleCheckIn` to `monitors/types.py`. I searched for leftover references to the old names, for `mock.patch` targets that point at the old module paths, and for circular imports through `monitors.models` \u2192 `monitors.types`. None turned up. The existing tests patch `sentry.issues.producer.produce_occurrence_to_kafka`, and the new module still imports it lazily from there, so those tests keep working.\n\nBoth findings are in code the PR moved without changing it. They are old problems, not regressions, but this PR puts them in a module that the description says will be extended.\n\n### HIGH severity (0)\n\n### MEDIUM severity (0)\n\n### LOW severity (2)\n- **`incident_occurrence.py:168`: the display config is computed and then thrown away.** `get_monitor_environment_context` builds a `config` copy with a readable `schedule_type` (lines 160-162), then returns the raw `monitor.config`. The event context therefore shows `schedule_type: 2`. `test_mark_failed.py:119` locks in that integer. The fix is either to return `config` and update the test, or to delete the unused lines.\n- **`incident_occurrence.py:46`: the same queries run once per failed check-in.** `create_incident_occurrence` is called up to `failure_issue_threshold` times. Each call separately loads the environment and the monitor from the database, and re-runs `get_last_successful_checkin()`, which isn't cached. The results are the same for every check-in in the batch. The fix is to add `select_related(\"monitor_environment__monitor\")` to the check-in query and look up the last successful check-in once.\n\n### Dropped in validation (0)\n\nOne independent validator checked both drafts and rated both VALID. I moved finding 1 from line 169 to line 168 after the validator's line check. Nothing was posted and GitHub was not called. The files are:\n- `bench/runs/getsentry_sentry-80528/pr-proof/drafts_raw.json`: the drafts before validation\n- `bench/runs/getsentry_sentry-80528/pr-proof/drafts.json`: `{\"kept\": [2 entries], \"dropped\": []}`, each with its verdict and evidence\n\nThe repository was not modified."
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "id": 0,
+    "verdict": "INVALID",
+    "actionable": "NO",
+    "evidence": "services/.../permissions/AdminPermissions.java:77 adds the ADMIN_FINE_GRAINED_AUTHZ guard on purpose. common/.../Profile.java:56,58 define ADMIN_FINE_GRAINED_AUTHZ (v1) and ADMIN_FINE_GRAINED_AUTHZ_V2 (v2) as two versions of the same feature, so only one can be enabled at a time. When v2 is enabled, management() (AdminPermissions.java:66-70) returns MgmtPermissionsV2, whose clients() returns ClientPermissionsV2. ClientPermissionsV2.java:193-195 setPermissionsEnabled throws UnsupportedOperationException(\"Not supported in V2\"). Running the block under v2 would therefore throw during client removal instead of cleaning anything up. The v1 per-object 'permissions enabled' resources don't exist in v2. Skipping the block when only v2 is on is the intended fix, not a regression."
+  },
+  {
+    "id": 1,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "services/.../permissions/ClientPermissionEvaluator.java:95-98: the Javadoc added in this PR says 'Returns {@code true} if {@link #canView()} returns {@code true}.' on the void method requireView(). Other require* methods use 'Throws ForbiddenException if ...' (lines 35-38, 47-50, 59-62). The same copy-paste error appears at lines 100-103 for requireViewClientScopes()."
+  },
+  {
+    "id": 2,
+    "verdict": "INVALID",
+    "actionable": "NO",
+    "evidence": "tests/base/.../fgap/PermissionClientTest.java:147-152: the get(1) call is inside a try block that expects getDefaultClientScopes() itself to throw ForbiddenException, because no permission has been granted yet. If the call succeeded, the test is already wrong and would fail on the catch assertion anyway. The newly created 'myclient' also gets the realm's default client scopes (several: acr, basic, email, profile, roles, web-origins), so index 1 exists."
+  },
+  {
+    "id": 3,
+    "verdict": "PARTIALLY_VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "tests/base/.../fgap/PermissionClientTest.java:170-174: the test asserts not(empty()) but then reads defaultClientScopes.get(1), so the assertion doesn't guarantee the index it uses. In practice a new client gets several realm default client scopes, so this won't throw today. Asserting hasSize(greaterThan(1)) or using get(0) would make the precondition explicit. This only affects test robustness, not production code."
+  },
+  {
+    "id": 4,
+    "verdict": "STYLE_PREFERENCE",
+    "actionable": "OPTIONAL",
+    "evidence": "services/.../permissions/ClientPermissionsV2.java:225,250 build Arrays.asList(scope) from one String and then call contains(). This copies UserPermissionsV2.java:132, which uses Arrays.asList(scopes) for varargs. List.of(scope) would work, and scope.equals(s) (as hasGrantedPermission at line 279 already does) would be simpler still. Behavior is the same either way."
+  },
+  {
+    "id": 5,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "services/.../permissions/ClientPermissionsV2.java:262-272: the private getEvaluationContext(ClientModel, AccessToken) method is never called; grep finds only its declaration. canExchangeTo (line 148-150) throws UnsupportedOperationException, so nothing uses it. The imports it needs are also dead (ClientModelIdentity, DefaultEvaluationContext and EvaluationContext at lines 22, 23 and 29), along with the unused static TOKEN_EXCHANGE import (line 46) and the unused logger (line 51)."
+  },
+  {
+    "id": 6,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "server-spi-private/.../authorization/AdminPermissionsSchema.java:304-326: getResourceName only handles USERS, returning 'All users' or the username. CLIENTS was added to the schema in this PR (lines 56, 67, 73). getOrCreateResource (lines 93-104) names client resources by the internal client UUID and doesn't set a display name, so CLIENTS resources fall through to resource.getDisplayName(). That gives null or no friendly name, instead of something like 'All clients' or the clientId, when permissions/resources are listed. A CLIENTS branch like the USERS one is needed for consistency."
+  }
+]

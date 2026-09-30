@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "calcom_cal.com-8330",
+ "seconds": 83,
+ "stderr": "",
+ "cost_usd": 0.36163200000000006,
+ "is_error": false,
+ "num_turns": 8,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I found 9 problems in this PR, and several of them would break normal bookings. I wrote them as review comments to `bench/runs/calcom_cal.com-8330/vanilla/comments.json`. I didn't run the tests; these come from reading the diff and the code around it.\n\nThe new availability check in `packages/trpc/server/routers/viewer/slots.ts` runs for every fixed host. Every user of a personal (non-team) event counts as a fixed host, so these problems affect ordinary bookings, not just round-robin events.\n\n**Most serious:**\n- **Double bookings (line 133):** when a slot falls inside a date override, the check returns \"available\" straight away. It never looks at the user's calendar events or existing bookings for that slot.\n- **Split working hours drop every slot (line 139):** a slot is rejected if *any* working-hours entry for that weekday doesn't contain it. A user with 9\u201312 plus 13\u201317 loses every slot. The same happens to users outside UTC, because converting their schedule to UTC splits one range into several entries.\n- **Slot end time never checked (line 142):** the end of the slot is calculated from its start time (copy/paste bug), so slots that run past the end of working hours are accepted.\n\n**Date override checks (lines 106\u2013118):**\n- With more than one override range on the same day, a slot inside the second range is rejected by the first.\n- Overrides are matched to slots by their UTC date, not the organizer's local date. For organizers outside UTC, slots near midnight get the wrong rules.\n- The \"unavailable all day\" case is never detected, because it compares two date objects with `===`, which is always false.\n- Slots that only partly overlap an override are accepted.\n\n**Timezone conversion in `packages/lib/slots.ts` (lines 212\u2013218):**\n- If an override crosses midnight in the invitee's timezone, its start and end times wrap around. The result is no slots or the wrong ones.\n- The override is still applied to the organizer's day, not the invitee's day.\n- The timezone field on an override is optional. When it's missing, the code falls back to the default timezone, and this code also runs in the browser, so that can be the browser's own timezone. The offsets can also be an hour off around daylight-saving changes."
+}

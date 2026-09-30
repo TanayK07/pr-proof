@@ -1,0 +1,74 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "The nullish fallback in lines 254-256 and 315-317 never selects a stored destination calendar because the find() branch only runs when externalCalendarId is already nullish, comparing every cal.externalId against undefined/null and always returning undefined. updateEvent() then sends Google an undefined calendarId, while deleteEvent() falls back to 'primary' which can hit the wrong calendar"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "The createEvent method signature in LarkCalendarService is missing the credentialId parameter required by the Calendar interface, violating the TypeScript interface contract"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Lines 128, 164, 192, and 237 in LarkCalendarService select event.destinationCalendar[0] blindly which targets the first calendar, incorrect in collective flows where multiple destination calendars with different credentials exist"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Line 119 in EventManager dereferences mainHostDestinationCalendar.integration even when evt.destinationCalendar is null or empty, throwing before the Daily fallback can run for the 'Meet without Google Calendar' path"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Lines 338-380 in EventManager iterate event.destinationCalendar but each provider call still receives the full destination array, causing providers that read the first entry to create every collective event on the first host's calendar instead of the current destination"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Lines 511-542 in EventManager can leave credential undefined when a saved credentialId no longer resolves, causing updateEvent(credential, ...) to throw and lines 597-608 to convert that single stale reference into a failure result for every calendar update in the booking"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "Lines 449-458 in handleCancelBooking ignore the current reference and use updBooking.references.find(), so each updated booking contributes at most one _calendar reference. In collective bookings with one calendar reference per host, the first host gets hit repeatedly while other hosts' events are never deleted. This branch also switches back to bookingToDelete.user.credentials, dropping a DB-fetched team credential"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "Lines 1063-1067 in handleNewBooking initialize evt.destinationCalendar to null when neither eventType nor organizerUser has a destination calendar, and lines 1077-1079 use optional chaining so teamDestinationCalendars are never appended. Collective events where only secondary hosts have calendars will be created with no destination calendars"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "CalendarService.ts in packages/lib violates the Calendar interface contract by missing the credentialId parameter, and line 156 selects only the first destination calendar ignoring credential routing needed for collective/multi-host flows"
+ },
+ {
+  "id": 9,
+  "path": null,
+  "line": null,
+  "issue": "Line 151 in organization create.handler.ts assigns slug when IS_TEAM_BILLING_ENABLED is true, which conflicts with the publish flow and pending-state checks. slug should be set only when billing is disabled; keep requestedSlug for billing-enabled orgs"
+ },
+ {
+  "id": 10,
+  "path": null,
+  "line": null,
+  "issue": "updateEvent and deleteEvent in Office365CalendarService don't match the Calendar interface: updateEvent is missing the externalCalendarId parameter, and deleteEvent is missing both event and externalCalendarId parameters. This causes createEvent to correctly use calendar-specific endpoints but updateEvent and deleteEvent always use the default calendar path"
+ },
+ {
+  "id": 11,
+  "path": null,
+  "line": null,
+  "issue": "In requestReschedule.handler.ts lines 240-242, the second optional chain in bookingToReschedule?.destinationCalendar is redundant since bookingToReschedule is already checked in the truthy branch"
+ }
+]

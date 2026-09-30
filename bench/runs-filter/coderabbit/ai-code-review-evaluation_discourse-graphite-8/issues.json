@@ -1,0 +1,62 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "totalPages calculation has off-by-one error when user_count is a multiple of limit - Math.floor(user_count / limit) + 1 yields an extra page for exact multiples, should use Math.ceil instead"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "next() function allows navigating to an empty page by clamping offset to user_count instead of the last valid offset"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Usernames are not normalized before lookup in add_members - whitespace or blank entries will silently skip valid users"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Pagination params limit and offset are not clamped - negative or very large values can trigger heavy queries or odd behavior"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Test for automatic-group remove_member uses PUT instead of DELETE, which won't validate verb correctness"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Guard condition in group/members.hbs checks model but loop iterates over members - if model is truthy but members is undefined/empty, table header renders with no rows"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "Stray closing </div> tag with no matching opening tag in group/members.hbs template"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "Route parameter mismatch - routes provide :id but controller expects :group_id, causing param is missing error"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "Hardcoded colors #333 and #aaa in SCSS instead of SCSS variables may break theme consistency"
+ },
+ {
+  "id": 9,
+  "path": null,
+  "line": null,
+  "issue": "usernames input is not cleared after add operation, making it easy to accidentally re-add the same usernames"
+ }
+]

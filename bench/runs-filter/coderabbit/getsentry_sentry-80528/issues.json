@@ -1,0 +1,26 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Typo in docstring: 'humam' should be 'human' on line 132"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Non-idiomatic iteration: should use next(iter(status_counts.keys())) instead of list(status_counts.keys())[0] on line 146"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Bug: Modified config copy is not used in return value - line 168 returns original monitor_environment.monitor.config instead of the modified config copy"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Typo in comment: 'commits' should be 'check-ins' on line 51"
+ }
+]

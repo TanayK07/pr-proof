@@ -1,0 +1,68 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Invalid email banner remains visible even after user edits the email input to valid values - banner only clears when clicking Cancel or attempting to add again"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "sendAddGuestsEmails ignores disableStandardEmails flags and forwards calendarEvent unchanged, which can send emails when they're disabled"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "sendAddGuestsEmails can leak hidden notes to attendees by not respecting hideCalendarNotes setting"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Authorization check uses && requiring both admin AND owner roles, which blocks legitimate admins or owners who only have one role - should use || instead"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Guest email comparisons are case-sensitive, allowing blacklisted/existing guests to slip through with different casing"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Duplicate guest emails are not removed from the input list"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "Notifications use the unfiltered guests input instead of the filtered uniqueGuests list"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "Reassigning function parameter 'value' in MultiEmail component is a code smell"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "Using array index as key in MultiEmail can cause issues when items are removed from the middle of the list"
+ },
+ {
+  "id": 9,
+  "path": null,
+  "line": null,
+  "issue": "Empty fragment <></> in MultiEmail can be simplified by restructuring the conditional"
+ },
+ {
+  "id": 10,
+  "path": null,
+  "line": null,
+  "issue": "Email uniqueness check in ZAddGuestsInputSchema is case-sensitive, so User@x.com and user@x.com pass as unique"
+ }
+]

@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "keycloak_keycloak-37634",
+ "seconds": 101,
+ "stderr": "",
+ "cost_usd": 0.6308423999999999,
+ "is_error": false,
+ "num_turns": 11,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote 8 review comments to `comments.json` and left the repository unchanged. Nothing was compiled or run; the findings come from reading the diff and the code around it.\n\n**Definite bugs:**\n- **`AccessTokenContext.java:73`**: the second null check re-checks `grantType` instead of `rawTokenId`, so a null raw id gets through.\n- **`AssertEvents.java:483`**: the new test matcher reads the wrong characters (`substring(3,5)` gives `ta` for `onrtac`; it should be `(4,6)`). Its condition is also inverted. Together these mean it never actually checks the grant type.\n- **`OAuth2GrantTypeFactory.getShortcut()`**: the javadoc says shortcuts are \"usually like 3-letters\", but decoding requires exactly 2. A custom grant that follows the javadoc produces tokens that can be encoded but never decoded. Nothing checks the length, null or the reserved `na` value.\n\n**Risky behaviour and contract changes:**\n- **Breaking SPI changes**: `getShortcut()` is abstract with no default, so every existing custom grant factory breaks. The public `Context(Context)` copy constructor was also removed.\n- **Startup failure on shortcut clash**: a duplicate shortcut throws at startup. The duplicate check compares map sizes, so it only catches clashes indirectly.\n- **Unknown grant type fails token issuance**: `encodeTokenId` throws `IllegalStateException` if the grant type isn't registered. Token creation could not fail this way before; falling back to `na` would be safer.\n- **Lightweight flag read from the wrong client**: it uses `session.getContext().getClient()` rather than the client the token is for, and now runs for every access token. In `KeycloakIdentity` that client can be null, causing an NPE. In `PolicyEvaluationService` it can be the admin console, so the token is wrongly marked lightweight.\n- **Possible ordering issue (not confirmed)**: `UseLightweightAccessTokenExecutor` might set the lightweight flag after `initToken`, leaving the token-type part of the id out of sync with the claims. I flagged it for the author to check."
+}

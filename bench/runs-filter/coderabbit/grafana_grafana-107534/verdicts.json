@@ -1,0 +1,8 @@
+[
+  {
+    "id": 0,
+    "verdict": "INVALID",
+    "actionable": "NO",
+    "evidence": "The claim that applyTemplateVariables runs only once per initial target is wrong. runShardSplitQuery calls it once per target at shardQuerySplitting.ts:52 (1 call). Each shard group is then run via runSplitQuery(datasource, subRequest, ...) at shardQuerySplitting.ts:163, and this PR makes runSplitQuery call datasource.applyTemplateVariables for each target too (querySplitting.ts:296-299). With the mocked shards ['1','10','2','20','3'], the sibling test 'Users query splitting for querying over a day' (shardQuerySplitting.test.ts:103-107) confirms there are 4 group requests (3 shard groups + the empty-shard group). The range is under a day, so there is 1 chunk per group and 1 target per request: 4 more calls. 1 + 4 = 5, so toHaveBeenCalledTimes(5) at shardQuerySplitting.test.ts:112 is correct. Changing it to 1 would break the test. The repeated interpolation is harmless because the target is already interpolated after the first pass."
+  }
+]

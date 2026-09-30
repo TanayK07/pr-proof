@@ -1,0 +1,8 @@
+[
+  {
+    "id": 0,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "tests/base/src/test/java/org/keycloak/tests/admin/group/GroupTest.java:139-150 starts the reader with `new Thread(...).start()` and discards the reference, so it can never be joined. Line 155 sets deletedAll=true and line 157 asserts caughtExceptions is empty right away. The reader checks deletedAll only at the top of the loop (line 140). A groups(null, 0, Integer.MAX_VALUE, true) call that is still running when the flag flips (line 143) can throw the NPE after the assertion has already passed. That is exactly the window the test targets, since the last deletes race with the last read. The result is a false pass, not a false failure: an exception added after the assertion is simply lost. The thread can also outlive the test and keep calling the realm admin API while the managed realm is torn down. Fix: keep the Thread reference and call join() with a timeout after deletedAll.set(true), before the assertion. An ExecutorService with Future.get() would also work."
+  }
+]

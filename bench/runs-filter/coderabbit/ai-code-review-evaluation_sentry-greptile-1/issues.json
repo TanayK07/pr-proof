@@ -1,0 +1,38 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Potential AttributeError when organization_context.member is None, causing organization_context.member.has_global_access to raise AttributeError"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "OptimizedCursorPaginator is incompatible with datetime fields - get_item_key calls math.floor() on datetime objects causing TypeError when used with order_by=\"-datetime\""
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "OptimizedCursorPaginator.value_from_cursor returns cursor.value directly without converting to datetime, breaking build_queryset's comparison logic for datetime fields"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Misleading comment claims to allow negative offsets but implementation clamps offset to 0 for forward pagination, and negative offsets for backward pagination will cause Django QuerySet AssertionError/ValueError since negative indexing is not supported"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Django QuerySet does not support negative slicing - the negative offset feature will crash at runtime when enable_advanced_features=True and cursor.offset < 0"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Misleading comments in Cursor class describe performance optimization for negative offsets but the Cursor class itself doesn't implement any special handling - actual implementation is in OptimizedCursorPaginator"
+ }
+]

@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "ai-code-review-evaluation_discourse-graphite-1",
+ "seconds": 53,
+ "stderr": "",
+ "cost_usd": 0.2182146,
+ "is_error": false,
+ "num_turns": 6,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote 7 review comments to `comments.json`; nothing in the repository was changed. The most serious problem is that the PR breaks an existing caller, emoji resizing.\n\n1. **Broken method signature** (`app/models/optimized_image.rb:149`): Ruby doesn't support two methods with the same name and different arguments. The new `self.downsize(from, to, dimensions, opts)` silently replaces the existing `downsize(from, to, max_width, max_height, opts)`. `Jobs::ResizeEmoji` still calls `OptimizedImage.downsize(path, path, 100, 100, opts)`, so the dimensions become `\"100\"` instead of `\"100x100\"`. `opts` becomes the number `100`, so reading `opts[:allow_animation]` from it gives nonsense.\n2. **Resize failures are ignored** (`uploads_controller.rb:67`): the loop doesn't check whether the resize worked. When it can't shrink the file (GIFs go through gifsicle with `--resize-fit 80%`, which it doesn't accept as a size; SVGs; any convert error), it runs up to 5 times for nothing. The file is then saved while still over `max_image_size_kb`.\n3. **Size may never update** (`uploads_controller.rb:66`): `tempfile.size` checks the already-open file. The optimisation step may replace the file on disk with a new one. If it does, the loop and `Upload.create_for` keep seeing the old size and the old contents. This one is plausible rather than confirmed.\n4. **Slow requests** (`uploads_controller.rb:67`): up to 5 passes of ImageMagick plus image_optim run inside the web request, on uploads up to 10MB. One upload can tie up a web worker for a long time, which is also a denial-of-service risk.\n5. **Hardcoded 10MB download limit** (`uploads_controller.rb:55`): this ignores the site settings. When `max_attachment_size_kb` is set above 10MB, attachments uploaded through the API by URL get cut off at 10MB.\n6. **Hardcoded 10MB check in the browser** (`utilities.js:182`): the per-type setting was replaced by 10MB for every type, attachments included.\n   - Attachments allowed by the setting but over 10MB are now rejected.\n   - Attachments over the configured limit are no longer caught in the browser, and the server only downsizes images.\n   - The error message shows 10240KB instead of the configured limit.\n7. **Wrong limit in the 413 error message** (`utilities.js:246`): that error comes from the web server's own upload limit (nginx `client_max_body_size`), not from 10MB. The old message used the site setting that admins are told to keep in line with nginx."
+}

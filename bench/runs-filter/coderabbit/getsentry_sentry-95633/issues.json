@@ -1,0 +1,44 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "hash(group_key) % self.num_queues will raise ZeroDivisionError if num_queues is 0 - need to guard against num_queues <= 0 in __init__"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Unused timeout parameter in join method - should silence with _ = timeout to satisfy Ruff linter"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Unused identifier parameter in result_processor function in test_queue_consumer.py - should rename to _identifier to satisfy Ruff linter"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Unused identifier parameter in track_calls function in test_results_consumer.py - should rename to _identifier to satisfy Ruff linter"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Unused force parameter in track_commits functions in test_results_consumer.py - should rename to _force to satisfy Ruff linter"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "pytestmark class attribute is a mutable list which triggers RUF012 - should be changed to immutable tuple (requires_kafka,)"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "try-except-pass silently swallows all exceptions during cleanup when deleting test topic - should catch Kafka-specific exception and log the error instead"
+ }
+]

@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "keycloak_keycloak-37429",
+ "seconds": 274,
+ "stderr": "",
+ "cost_usd": 1.5916227999999997,
+ "is_error": false,
+ "num_turns": 23,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I've written four draft findings and three validators are checking them. I'll build the final kept and dropped lists once all three report back."
+}

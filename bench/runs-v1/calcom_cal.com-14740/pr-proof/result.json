@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "calcom_cal.com-14740",
+ "seconds": 236,
+ "stderr": "",
+ "cost_usd": 1.6304050000000003,
+ "is_error": false,
+ "num_turns": 20,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I've sent all 9 drafts to four validators. I'll wait for their verdicts before writing the final file."
+}

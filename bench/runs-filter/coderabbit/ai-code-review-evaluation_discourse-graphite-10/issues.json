@@ -1,0 +1,68 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Icon-only d-button elements (save, cancel, edit, delete) lack accessible labels for screen readers - need title attributes with i18n keys that don't currently exist in locale files"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "obj[k].map in store.js.es6 will throw if API returns null or non-array for *_ids fields - needs Array.isArray guard before calling map"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "EmbeddableHost.where(id:).first returns nil causing NoMethodError in update/destroy actions when invalid id is passed - need find_by with explicit guard"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Host validation regex caps TLDs at 5 characters, rejecting valid domains like .museum or .community - should allow up to 63 characters"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "self.host.sub! in before_validation raises on nil host instead of returning validation error - needs nil guard"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Migration execute(...)[0] will raise IndexError if embed_category or uncategorized_category_id queries return no rows - needs presence checks"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "Migration backfill interpolates host strings directly into SQL without escaping and doesn't filter blank lines - needs connection.quote and blank check"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "Fabricator(:private_category) after_build uses update! which persists even for Fabricate.build, and transients[:group].id raises if group not passed - should set attribute directly and guard group usage"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "Extra blank lines in spec files violate RuboCop layout rules (Layout/EmptyLinesAroundBlockBody)"
+ },
+ {
+  "id": 9,
+  "path": null,
+  "line": null,
+  "issue": "Typo in spec context description: 'emeddable' should be 'embeddable'"
+ },
+ {
+  "id": 10,
+  "path": null,
+  "line": null,
+  "issue": "Test requests fruit id 2 but mock always returns fruit id 1 - test passes accidentally due to matching color_ids"
+ }
+]

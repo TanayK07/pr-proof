@@ -1,0 +1,26 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Skipping PostgreSQL test for all postgres runs removes coverage; consider gating this on a CI-only env var and/or filing a follow-up issue"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Track the RV short-circuit TODO - if this optimization is intended, consider filing a follow-up so it doesn't get lost"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Consider per-key dedupe now that the lock is narrow - without a singleflight/per-key guard, concurrent callers can build the same index twice"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Docstring coverage is 0.00% which is insufficient - the required threshold is 80.00%; write docstrings for the functions missing them"
+ }
+]

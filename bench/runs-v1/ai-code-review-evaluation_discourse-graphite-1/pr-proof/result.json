@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "ai-code-review-evaluation_discourse-graphite-1",
+ "seconds": 363,
+ "stderr": "",
+ "cost_usd": 1.3696893999999997,
+ "is_error": false,
+ "num_turns": 12,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Draft 1 (the duplicate `downsize` method that breaks the emoji resize job) held up. The other three checkers are still running, and I'll finish checking and write `drafts.json` once they report back."
+}

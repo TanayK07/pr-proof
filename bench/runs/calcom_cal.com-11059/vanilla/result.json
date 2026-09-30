@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "calcom_cal.com-11059",
+ "seconds": 79,
+ "stderr": "",
+ "cost_usd": 0.46641759999999993,
+ "is_error": false,
+ "num_turns": 8,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I've written 14 review comments to `comments.json`; the file is valid JSON and the repository is unchanged. I found the issues by reading the diff and the surrounding code; nothing was run or tested. The most serious ones:\n\n**Stored credentials get corrupted**\n- **Google Calendar:** `parseRefreshTokenResponse` returns zod's `{ success, data }` wrapper, and that whole object is saved as the credential `key`. The next time the credential loads, parsing it fails.\n- **Fake refresh token:** when a provider's response has no `refresh_token`, the code stores the literal string `\"refresh_token\"` instead, even with sync turned off. For Office365 (where `refresh_token` is optional) this overwrites the real token, so every later refresh fails. Zoom has the same problem when sync is on.\n- **Broken fallback schema:** `minimumTokenResponseSchema` uses `[z.string().toString()]` as keys, which both become the string `\"[object Object]\"`. Zod also drops keys it doesn't know. So `expires_in`, `expiry_date` and `refresh_token` from the sync endpoint are all lost, and Zoom ends up with a `NaN` expiry.\n\n**Sync mode doesn't work**\n- **Wrong response type:** `refreshOAuthTokens` returns a raw fetch `Response`, but Google, HubSpot, Zoho CRM and Zoho Bigin expect a gaxios, HubSpot or axios response object. So `res?.data` is undefined and the refresh throws.\n- **Wrong ids:**\n  - Zoho Bigin sends the credential id as `calcomUserId`.\n  - Zoom sends the slug `\"zoomvideo\"`, but the app's real slug is `\"zoom\"`.\n\n**Security**\n- **Unauthenticated sync endpoint:** the outgoing request to the self-hoster's endpoint carries no secret, yet that endpoint hands back live access tokens for any user id.\n- **Webhook secret check:** it uses `!==` rather than a constant-time comparison, and a header sent as an array always fails.\n\n**Salesforce**\n- It now refreshes the token every time a client is created, and skips the sync path entirely.\n- After saving the new token, it still builds the connection with the old access token.\n- It checks `statusText !== \"OK\"`, which fails on HTTP/2 because the status text there is empty.\n\n**Webhook robustness**\n- A bad body or failed decryption comes back as an unhandled 500 instead of a 400.\n- The request method isn't checked.\n- If a user has more than one credential for the same app, an arbitrary one gets overwritten.\n- `APP_CREDENTIAL_SHARING_ENABLED` is a string rather than a boolean."
+}

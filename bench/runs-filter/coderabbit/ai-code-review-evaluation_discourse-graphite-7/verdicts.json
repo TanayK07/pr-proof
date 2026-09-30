@@ -1,0 +1,14 @@
+[
+  {
+    "id": 0,
+    "verdict": "PARTIALLY_VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "app/assets/stylesheets/mobile/compose.scss:30-33 #file-uploading still uses scale-color($secondary, $lightness: 50%) while sibling #draft-status (line 35-36) was changed to dark-light-choose(scale-color($primary, 75%), scale-color($secondary, 25%)). The inconsistency is real, but the rule is pre-existing and not touched by the diff. The dark-theme claim is mostly wrong: this rule is already $secondary-based, which is what the PR's dark branch uses (dark-light-choose in common/foundation/variables.scss:46-52). In a dark theme, $secondary lightened 50% gives mid-grey text, close to #draft-status's dark result. The bigger risk is in light themes: default $secondary is #ffffff (common/foundation/colors.scss:2), and lightening white stays white on the light reply-control background (line 42, dark-light-diff(..., 90%, -60%)). Wrapping it in dark-light-choose would fix both the consistency and the visibility, but that is optional cleanup outside the PR's changes."
+  },
+  {
+    "id": 1,
+    "verdict": "VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "app/assets/stylesheets/mobile/compose.scss:174-176 .wmd-input { color: darken($primary, 40%); } was left unchanged. In dark themes $primary is the light text colour, so darkening it by 40 lightness points (for example #ddd becomes about #777) gives dim grey text on a dark background. That is the exact dark-theme problem this PR targets (see dark-light-choose, common/foundation/variables.scss:46-52). By contrast, desktop/compose.scss:275-277 uses plain color: $primary for .wmd-input, which works in both themes. The issue is real but pre-existing and outside the diff. The simple fix is to use $primary, matching desktop, or dark-light-choose(darken($primary, 40%), $primary)."
+  }
+]

@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "keycloak_keycloak-40940",
+ "seconds": 156,
+ "stderr": "",
+ "cost_usd": 0.8171754000000001,
+ "is_error": false,
+ "num_turns": 14,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR review summary (draft mode): 2 comments kept, 0 dropped\n\nNothing was posted and the repository wasn't changed. The validated drafts are in `drafts.json` as `{\"kept\": [...], \"dropped\": []}`, and the unvalidated drafts are in `drafts_raw.json`.\n\n**About the diff:** most of `git diff c834e74 HEAD` has nothing to do with this PR. The base commit is newer upstream than the PR, so the diff shows upstream changes to JGroups, docs, `kc.sh` and token exchange as if the PR reverted them. The PR itself changes three things:\n- `GroupAdapter.getSubGroupsCount()` in the Infinispan cache layer now returns `null` instead of throwing a NullPointerException when the group has been deleted from the database.\n- `CachedGroup.getRealm()` gets an `@Override` annotation.\n- A new concurrency test, `GroupTest.createMultiDeleteMultiReadMulti`.\n\nThe core fix is correct. `GroupRepresentation.subGroupCount` is a `Long` that can be `null`, and every caller just passes the value on to the response.\n\n### MEDIUM (1)\n- **The same crash is still possible in the paginated `getSubGroupsStream` overloads** (`GroupAdapter.java:256/262/268`). These three methods still call `modelSupplier.get().getSubGroupsStream(...)` without checking for `null`.\n  - `GET /groups/{id}/children` reaches this through `GroupResource.java:180`. If another request deletes the group after it was loaded from the cache, the call throws a NullPointerException and the API returns a 500.\n  - The fix is to return `Stream.empty()` when the model is `null`, the same way the PR handles `getSubGroupsCount`.\n  - The validator confirmed the path is real, though the timing window is narrower than in the group-listing case the PR fixes.\n\n### LOW (1)\n- **The regression test can pass without testing the race** (`GroupTest.java:155`). The test lists groups on a second thread while deleting them on the main thread. Three problems:\n  - The main thread never waits for the second thread (`join()`), so an error from the last request still running can arrive after the assertion has already passed.\n  - Nothing checks that the second thread made any requests while deletes were running, so the test can pass even without the fix.\n  - If a delete throws, the second thread keeps looping after the test ends.\n  - Suggested fix: keep a reference to the thread, `join()` it, and assert that it completed at least one read.\n\n### Dropped in validation (0)\nNo drafts were dropped.\n\nThere's no PR link because draft mode had no GitHub access."
+}

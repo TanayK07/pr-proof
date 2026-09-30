@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "calcom_cal.com-22345",
+ "seconds": 60,
+ "stderr": "",
+ "cost_usd": 0.27628600000000003,
+ "is_error": false,
+ "num_turns": 8,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote 5 review comments to `comments.json`. I didn't run the integration tests, so nothing below has been checked against a database.\n\n1. **Missing parentheses around the event-type filter** (`insightsBooking.ts:107`), the most serious one. When it's the only filter, `getFilterConditions()` returns `(\"eventTypeId\" = X) OR (\"eventParentId\" = X)` with no outer parentheses. If a caller adds anything with AND, it binds tighter than OR, so the extra condition (a date range or an authorization check) is skipped for rows matching the first test. `getBaseConditions` only avoids this because it wraps each side. The OR-joined team and org authorization conditions have the same exposure.\n2. **Weaker constructor type** (`insightsBooking.ts:29`). The new options type makes `teamId` optional for every scope, so `{ scope: \"team\" }` without a `teamId` now compiles. At runtime validation fails and the service quietly returns no data instead of erroring.\n3. **Changed public contract** (`insightsBooking.ts:68`). `findMany` is removed, so callers now have to write raw SQL around these fragments. The fragments use unqualified column names, which become ambiguous (or match the wrong table) once another table is joined in.\n4. **Dead branches in `getBaseConditions`** (`insightsBooking.ts:72`). The authorization condition can never be null, so two of the branches never run. The structure also suggests filters could be applied without authorization if that ever changed.\n5. **Lost test coverage** (`insightsBooking.integration-test.ts:435`). The caching tests were deleted rather than updated, though the service still caches. Most tests only compare SQL text, and the one real query doesn't cover the event-type-only case where the parentheses problem shows up."
+}

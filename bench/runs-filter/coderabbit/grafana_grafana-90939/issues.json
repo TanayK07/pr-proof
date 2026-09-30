@@ -1,0 +1,14 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Add a second cache check under the write lock to avoid redundant rebuilds - a concurrent caller could fill the cache between the initial RUnlock and Lock, re-checking avoids extra IO"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Docstring coverage is 0.00% which is insufficient - the required threshold is 80.00%, need to write docstrings for functions missing them"
+ }
+]

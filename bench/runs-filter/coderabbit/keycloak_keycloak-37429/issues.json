@@ -1,0 +1,62 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Placeholder format mismatch in error-invalid-multivalued-size message - uses {0}, {1}, {2} and choice syntax instead of i18next-standard {{...}} interpolation, causing the Admin UI to display validation message literally instead of interpolating values"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "owasp-java-html-sanitizer dependency version 20240325.1 is outdated and should be updated to 20260313.1"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "commons-text dependency version 1.13.0 is outdated and should be updated to 1.15.0"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Wrong language in Lithuanian bundle (messages_lt.properties) - totpStep1 at line 101 contains Italian text instead of Lithuanian"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Traditional Chinese characters used in Simplified Chinese locale file (messages_zh_CN.properties) - totpStep1 at line 112 contains Traditional Chinese characters (\u624b\u6a5f, \u5b89\u88dd, \u61c9\u7528\u7a0b\u5f0f) instead of Simplified Chinese equivalents (\u624b\u673a, \u5b89\u88c5, \u5e94\u7528\u7a0b\u5e8f)"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Inconsistent placeholder spacing after <br /> in Georgian locale (messages_ka.properties) - lines 172, 174, 451, 452 use <br />{0} while other locales use <br /> {0}"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "Wrong language in Lithuanian login bundle (messages_lt.properties) - loginTotpStep1 at line 71 contains Italian text instead of Lithuanian"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "Typo in method name: santizeAnchors should be sanitizeAnchors"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "PolicyFactory instances POLICY_SOME_HTML and POLICY_NO_HTML should be static final for performance and clarity"
+ },
+ {
+  "id": 9,
+  "path": null,
+  "line": null,
+  "issue": "Pattern HTML_TAGS should be static final to avoid recompilation per instance"
+ }
+]

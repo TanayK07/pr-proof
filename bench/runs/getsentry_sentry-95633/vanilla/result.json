@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "getsentry_sentry-95633",
+ "seconds": 62,
+ "stderr": "",
+ "cost_usd": 0.2497672,
+ "is_error": false,
+ "num_turns": 6,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I've written 7 review comments to `bench/runs/getsentry_sentry-95633/vanilla/comments.json` (it parses as valid JSON). I didn't run the tests; all findings come from reading the diff and the code around it. The first four are the serious ones:\n\n1. **Messages are silently dropped after the first rebalance** (`queue_consumer.py:338`). The factory creates one queue pool and every strategy reuses it. When a strategy closes, it shuts that pool down, so the next strategy gets a dead pool. Every submit then fails, the error is logged, and the offset is marked done anyway. From then on, each message is lost and its offset committed.\n2. **Commits happen off the main thread** (`queue_consumer.py:287`). The background loop calls arroyo's `commit` callback, which isn't thread-safe. It should be called from `poll()`.\n3. **Commits can stop for good** (`queue_consumer.py:89`). The code assumes Kafka offsets have no gaps, but compaction and transaction markers leave them. One gap stops commits for that partition permanently, and its tracked offsets keep growing.\n4. **Memory can grow without limit** (`queue_consumer.py:185`). The queues have no size limit and nothing ever tells the consumer to slow down, despite the docstring claiming backpressure. A single slow group, the exact problem the PR is meant to solve, lets memory grow until the process runs out.\n5. **Old partition state is never cleared** (`queue_consumer.py:103`). Revoked partitions keep their offset-tracking state, and their queued items are still processed and committed afterwards.\n6. **Shutdown throws away finished work** (`queue_consumer.py:344`). `join()` ignores its timeout, stops the commit thread before the queues drain, and never does a final commit, so everything since the last commit is reprocessed.\n7. **Queues don't drain on shutdown** (`queue_consumer.py:234`). Each worker is flagged to stop before its queue is shut down, so it exits after its current item instead of finishing what's queued.\n\n`queue.ShutDown` only exists from Python 3.13, but the repo requires 3.13 or later, so that isn't a problem."
+}

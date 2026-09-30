@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "ai-code-review-evaluation_discourse-graphite-2",
+ "seconds": 58,
+ "stderr": "",
+ "cost_usd": 0.2908528,
+ "is_error": false,
+ "num_turns": 6,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I've written 7 review comments to `comments.json`; the repository is unchanged. I read the code and didn't run anything. The two most serious:\n\n1. **Unsubscribe page can crash** (`app/controllers/topics_controller.rb:105`): if the user has no per-topic notification record, `TopicUser.find_by` returns nil and the page returns a 500. That can happen when the email came from a mention or a category watch.\n2. **A plain link click changes settings, one step each time** (`topics_controller.rb:107`): the first click drops \"watching\" to \"regular\" and the next click mutes the topic. So a double click, a page reload, or a mail client's link scanner can mute a topic the user didn't mean to mute. There's also no protection against forged requests: any site can embed the URL and mute topics for logged-in users.\n\nThe other five:\n\n3. **Skips the normal update path**: the level is saved with `tu.save!` instead of `TopicUser.change`. The usual bookkeeping and the live-update message aren't sent, so open browser tabs show the old notification state.\n4. **Shared email text now needs a new value** (`config/locales/server.en.yml:1855`): the `unsubscribe_link` string now expects `%{unsubscribe_url}`, but only `UserNotifications` passes it. Other callers, plugins and existing specs will hit an error or show the raw placeholder.\n5. **`List-Unsubscribe` header**: it still points at user preferences. Mail clients follow this header automatically, so pointing it at the new endpoint would silently mute topics.\n6. **In-app navigation changes nothing**: the Ember route only loads the topic, so reaching the unsubscribe page inside the app says \"You will stop receiving notifications\" but changes nothing.\n7. **Unescaped HTML in the template**: the template renders `I18n.t` output unescaped with `{{{ }}}`. It's only safe while `fancyTitle` is always escaped by the server. The property name is also misspelled (`stopNotificiationsText`)."
+}

@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "ai-code-review-evaluation_sentry-greptile-2",
+ "seconds": 250,
+ "stderr": "",
+ "cost_usd": 1.6058827999999998,
+ "is_error": false,
+ "num_turns": 18,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I've started four validators covering all 8 draft findings. I'll wait for them to finish before writing the kept/dropped results."
+}

@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "grafana_grafana-80329",
+ "seconds": 149,
+ "stderr": "",
+ "cost_usd": 1.1703039999999998,
+ "is_error": false,
+ "num_turns": 11,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I've started four validators, one per draft. I'll wait for all of them before writing the final drafts file."
+}

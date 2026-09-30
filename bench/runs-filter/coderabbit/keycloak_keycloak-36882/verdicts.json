@@ -1,0 +1,8 @@
+[
+  {
+    "id": 0,
+    "verdict": "INVALID",
+    "actionable": "NO",
+    "evidence": "Profile.isFeatureEnabled (common/.../Profile.java:408-410) would NPE if CURRENT were null, but the CLI bootstrap initializes the profile before any command's run(). KeycloakMain.main (KeycloakMain.java:94) calls Picocli.parseAndRun. For a normal execution, parseAndRun (Picocli.java:117) calls createCommandLineForCommand, which runs Environment.setParsedCommand(ac) for the resolved AbstractCommand (Picocli.java:173-176). Then, before cmd.execute (Picocli.java:128-129), it calls PropertyMappers.sanitizeDisabledMappers(). Because a parsed command is present, that method calls Environment.getCurrentOrCreateFeatureProfile() (PropertyMappers.java:297-305), which runs Profile.configure when no profile exists yet (Environment.java:239-243). On the rebuild-check path (Picocli.java:121-126), the update-compatibility command's run() is never executed; only re-augmentation/build runs there. So UpdateCompatibilityCheck.run():46 and UpdateCompatibilityMetadata.run():46 always see an initialized Profile. The PR's new test UpdateCommandDistTest.testFeatureNotEnabled goes through this exact path without --features and expects the 'feature not enabled' message, not an NPE. A null-safe guard would be harmless but isn't needed."
+  }
+]

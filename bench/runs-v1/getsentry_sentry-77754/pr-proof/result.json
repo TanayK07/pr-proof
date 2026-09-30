@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "getsentry_sentry-77754",
+ "seconds": 157,
+ "stderr": "",
+ "cost_usd": 1.0034736000000002,
+ "is_error": false,
+ "num_turns": 13,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR review draft: 3 comments kept, 1 dropped in validation\n\nNothing was posted and the repository wasn't changed. `drafts_raw.json` holds all 4 drafts as they were at the end of Phase 5, and `drafts.json` now holds `{\"kept\": [...], \"dropped\": [...]}` with each validator's verdict and evidence.\n\n### HIGH severity (1)\n- **`queued` gets the same timestamp for every instance** (`src/sentry/integrations/services/assignment_source.py:18`): `queued: datetime = timezone.now()` runs once, when the module is imported. So every `AssignmentSource` in a process gets that same time. Nothing reads `queued` yet, but it goes into every task payload. The fix is `field(default_factory=timezone.now)`.\n\n### MEDIUM severity (1)\n- **The new task argument can fail during a rolling deploy** (`src/sentry/integrations/utils/sync.py:141`): `assignment_source_dict` is always sent, even when it's `None`. Old workers don't accept it, so they raise `TypeError`, and the task retries up to 5 times, 5 minutes apart. The sync can be lost if every attempt lands on an old worker. The fix is to ship the new argument on the task first, or only send the key when a source exists. The validator agreed but noted the impact is mostly temporary errors and delay while the deploy is in progress.\n\n### LOW severity (1)\n- **`assignment_source` was added to the wrong abstract method** (`src/sentry/integrations/mixins/issues.py:416`): it was added to `sync_status_outbound`, where nothing passes or reads it. The method that actually receives it, `sync_assignee_outbound`, only gets it through `**kwargs`. The validator rated this partially valid, so I cut the draft down: the missing loop protection for status sync and the Example integration's signature mismatch both existed before this PR, and I lowered it from MEDIUM to LOW.\n\n### Dropped in validation (1)\n- **`from_dict` silently turns off loop protection when parsing fails.** The validator found no path in this PR that reaches it: the only thing producing the dict is `to_dict` on the same class, `queued` has a default, and tasks queued before this change never call `from_dict`. It would only matter after a future change to the class's fields, so it's hardening, not a defect."
+}

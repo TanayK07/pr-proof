@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "grafana_grafana-103633",
+ "seconds": 204,
+ "stderr": "",
+ "cost_usd": 1.3275648,
+ "is_error": false,
+ "num_turns": 11,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I've written four draft findings and saved a copy to `drafts_raw.json`. Three validator agents are now checking them. I'll wait for all of them before writing the final `drafts.json`."
+}

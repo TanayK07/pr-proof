@@ -1,0 +1,44 @@
+[
+  {
+    "id": 0,
+    "verdict": "INVALID",
+    "actionable": "NO",
+    "evidence": "AlertRuleMenu.tsx:31 declares handleDelete: (rule: RulerRuleDTO, groupIdentifier) => void. Both call sites pass zero-arg closures: RuleActionsButtons.V2.tsx:99 `handleDelete={() => showDeleteModal(identifier, groupIdentifier)}` and RuleActionsButtons.tsx:115 `handleDelete={() => {...}}`. In TypeScript a function with fewer parameters is assignable to one with more, so there is no type mismatch. The EditableRuleIdentifier goes to showDeleteModal inside the closure, not to handleDelete. The signature's rule param is unused by callers, which is only a cosmetic smell."
+  },
+  {
+    "id": 1,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "AlertRuleMenu.tsx:83/87 compute canPause/canDelete as ruler OR grafana-prom abilities, but rendering still requires a ruler rule: line 123 `canPause && rulerRuleType.grafana.rule(rulerRule) && ...` and line 165 `canDelete && rulerRule && ...`. The PR removed GrafanaRuleLoader.tsx, which fetched the ruler group and passed `rule={rulerRule}` to RuleActionsButtons. The new GrafanaRuleListItem.tsx:47 passes only `promRule={rule}`, so RuleActionsButtons.V2.tsx:95 sends rulerRule=undefined. In the new list view, Delete and Pause therefore never render even when useGrafanaPromRuleAbilities grants them, which is a regression from the previous list view. Delete could key off canDelete alone, because the V2 handler ignores the rulerRule argument. Pause needs a prom-rule-capable MenuItemPauseRule."
+  },
+  {
+    "id": 2,
+    "verdict": "INVALID",
+    "actionable": "NO",
+    "evidence": "useIsRuleEditable.ts:18-43 is not modified by this PR. The query must run before the `if (!rule)` check because of the Rules of Hooks: hooks cannot be called conditionally or after an early return. In the new call path the rules source is 'grafana' (getGroupOriginName for grafana group identifiers). For that source, featureDiscoveryApi.ts:46-54 returns static data from queryFn with no network request, and RTK Query caches the result by argument, so there are no extra API calls."
+  },
+  {
+    "id": 3,
+    "verdict": "INVALID",
+    "actionable": "NO",
+    "evidence": "useAbilities.ts:560-572: useCanSilence calls useFolder, useGrafanaRulesSilenceSupport and useCanSilenceInFolder before `if (!rule) return [false, false]`. This order is required by the Rules of Hooks, since hooks must be called unconditionally and in the same order on every render. Moving the early return above them would be a bug. useFolder(undefined) is already a no-op for undefined UIDs. This code also predates the PR."
+  },
+  {
+    "id": 4,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "FilterView.tsx:151-162: inside rules.map(), the 'grafana' case returns <GrafanaRuleListItem .../> without a key. The `key` is destructured on line 152 and used by the sibling branches (DataSourceRuleLoader line 165 and UnknownRuleListItem line 169). The PR diff dropped the key when replacing GrafanaRuleLoader with GrafanaRuleListItem. This causes a React missing-key warning and weaker reconciliation. Fix: add key={key}."
+  },
+  {
+    "id": 5,
+    "verdict": "INVALID",
+    "actionable": "NO",
+    "evidence": "GrafanaGroupLoader.tsx:68 `promResponse.data.groups.at(0)?.rules.map(...)`. Optional chaining short-circuits the whole rest of the member/call chain: if at(0) returns undefined, `.rules.map(...)` is never evaluated and the expression becomes undefined, which React renders as nothing. There is no runtime error on empty groups. A `?.` before map would only matter if `rules` itself could be undefined, and the DTO types it as a required array."
+  },
+  {
+    "id": 6,
+    "verdict": "INVALID",
+    "actionable": "NO",
+    "evidence": "This PR adds `provenance?: string` to GrafanaPromRuleDTOBase (unified-alerting-dto.ts:135). prometheusRuleType.grafana.rule (utils/rules.ts:133) is `(rule?: Rule) => isGrafanaPromAlertingRule(rule) || isGrafanaPromRecordingRule(rule)`, and both of those are explicit type predicates (rules.ts:103,107). The repo uses TypeScript 5.7.3 (package.json:252), which infers type predicates for such arrow functions (TS 5.5+). So `&& Boolean(promRule.provenance)` in isProvisionedPromRule (rules.ts:171-172) is narrowed to GrafanaPromRuleDTO. Other code relies on the same narrowing, e.g. RuleActionsButtons.V2.tsx:139-142 accesses promRule.uid and AlertRuleMenu.tsx:73 passes promRule where GrafanaPromRuleDTO is required."
+  }
+]

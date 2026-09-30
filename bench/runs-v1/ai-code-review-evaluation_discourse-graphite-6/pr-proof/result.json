@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "ai-code-review-evaluation_discourse-graphite-6",
+ "seconds": 128,
+ "stderr": "",
+ "cost_usd": 0.5277414,
+ "is_error": false,
+ "num_turns": 9,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR Review Summary: 2 comments drafted, none dropped in validation (draft mode, nothing posted)\n\n\"UX: show complete URL path if website domain is same as instance domain.\" I didn't contact GitHub or change the repository. Each finding was checked by a separate validator, and both were confirmed as valid.\n\n### HIGH severity (1)\n- **The TL0 website restriction is bypassed** (`app/serializers/user_serializer.rb:153`)\n  - **The dead method:** the new `include_website_name` has no `?` at the end. active_model_serializers 0.8.3 only calls methods named `include_<attr>?`, so this one never runs.\n  - **The missing guard:** `website_name` was added to the plain `attributes` list. `website` is in `untrusted_attributes`, which hides it from anonymous viewers when the user is TL0. `website_name` gets no such check.\n  - **The result:** the template now checks `model.website_name`. For a TL0 user it renders `<span>{{model.website_name}}</span>`, so anonymous visitors see the website domain that the anti-spam rule was meant to hide.\n  - **The fix:** add `:website_name` to `untrusted_attributes` and delete `include_website_name`.\n\n### LOW severity (1)\n- **The \"same parent domain\" check is too loose, and inconsistent** (`app/serializers/user_serializer.rb:144`)\n  - **Shared suffixes match:** the check drops only the first label of each host and compares the rest. So `myforum.herokuapp.com` and `spam.herokuapp.com` count as the same site, as do `a.co.uk` and `b.co.uk`, and the full path gets shown.\n  - **Inconsistent:** a `www.example.com` website on an `example.com` forum shows only the host, while an `example.com` website on `forum.example.com` shows the full path.\n  - **Impact:** display only; the link still points to the real URL.\n  - **The fix:** compare registrable domains using the Public Suffix List, or only show the full path on an exact match or when the website is a parent domain of the forum.\n\n### Dropped in validation (0)\n\n`drafts_raw.json` holds the unvalidated drafts. `drafts.json` holds `{\"kept\": [...], \"dropped\": [...]}` with each validator's verdict and evidence; both are in `bench/runs/ai-code-review-evaluation_discourse-graphite-6/pr-proof/`."
+}

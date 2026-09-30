@@ -1,0 +1,14 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Inconsistent theme handling: #file-uploading uses scale-color($secondary, $lightness: 50%) while sibling #draft-status was updated to use dark-light-choose, which may cause visibility issues for #file-uploading text in dark themes"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": ".wmd-input text color uses darken($primary, 40%) which was not updated - darkening an already dark primary color could cause readability issues in some theme configurations"
+ }
+]

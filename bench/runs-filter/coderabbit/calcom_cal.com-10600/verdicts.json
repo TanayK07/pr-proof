@@ -1,0 +1,56 @@
+[
+  {
+    "id": 0,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "apps/web/pages/api/auth/two-factor/totp/setup.ts:61-68 generates 10 codes and stores symmetricEncrypt(JSON.stringify(backupCodes), CALENDSO_ENCRYPTION_KEY). packages/features/auth/lib/next-auth-options.ts:131-146 and apps/web/pages/api/auth/two-factor/totp/disable.ts:48-64 decrypt the list and compare plaintext with indexOf. The codes are only shown once, at setup (setup.ts:78 returns them; EnableTwoFactorModal.tsx shows them), so the server never needs to recover them. Unlike the TOTP secret, which has to be decryptable, they could be stored as one-way hashes. As written, anyone who has both the DB and CALENDSO_ENCRYPTION_KEY can recover every unused backup code."
+  },
+  {
+    "id": 1,
+    "verdict": "VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "apps/web/playwright/login.2fa.e2e.ts:52 has `await expect(page.locator(...).isChecked()).toBeTruthy()`. Locator.isChecked() returns Promise<boolean>, and a Promise object is always truthy, so this assertion can never fail. The PR author says so in the FIXME comment added at lines 50-51, and the test at line 127 already uses the correct form `[data-state=\"checked\"]` with toBeVisible(). The assertion line itself existed before this PR, which only added the FIXME, so fixing it is a cheap cleanup, not a regression fix."
+  },
+  {
+    "id": 2,
+    "verdict": "VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "next-auth-options.ts:139-156 reads user.backupCodes (which was selected earlier), decrypts it, runs indexOf, sets the entry to null, and writes the whole re-encrypted blob back with a plain prisma.user.update. There is no transaction, no optimistic check (e.g. `where: {id, backupCodes: <old ciphertext>}`), and no row lock. Two concurrent logins with the same code can both pass indexOf before either write lands, so one code can be used twice. The attacker would already need the password plus a valid code, and checkRateLimitAndThrowError (line 109) limits volume, so the impact is low. The at-rest part of this comment repeats issue 0."
+  },
+  {
+    "id": 3,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "The base commit efa6d464 already contains packages/prisma/migrations/20230828094603_add_include_calendar_event. This PR adds packages/prisma/migrations/20230804153419_add_backup_codes, which sorts before it. Environments that already applied 20230828094603 will end up with an out-of-order history: the new migration is older than the latest one already applied, which causes drift and ordering warnings in `prisma migrate dev`, and schema history no longer matches directory order. It should be regenerated with a current timestamp after rebasing on main."
+  },
+  {
+    "id": 4,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "packages/ui/components/form/inputs/Input.tsx:47-51 adds tabIndex={-1} to the show/hide password button inside the shared PasswordField. That removes the toggle from the tab order for every PasswordField in the app (about 30 usages in apps/ and packages/), not only the 2FA modals, so keyboard-only users can no longer reach it. This is a global a11y regression unrelated to backup codes and should be reverted or scoped to the call sites that need it."
+  },
+  {
+    "id": 5,
+    "verdict": "VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "next-auth-options.ts:113-115 throws ThirdPartyIdentityProviderEnabled when identityProvider !== CAL && !credentials.totpCode. Line 117 throws IncorrectEmailPassword when there is no password and no totpCode. Both checks run before the backupCode branch at line 131 and only exempt totpCode, so a Google/SAML user with 2FA who submits only a backupCode is rejected before the backup code is ever checked. The claim is accurate. It is a gap in the new feature's coverage rather than a regression, because SSO users could not use backup codes before either."
+  },
+  {
+    "id": 6,
+    "verdict": "VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "apps/web/pages/auth/login.tsx:179-182 renders `twoFactorRequired ? (!totpEmail ? TwoFactorFooter : ExternalTotpFooter)`. Only TwoFactorFooter (lines 103-133) contains the new 'lost_access' button. ExternalTotpFooter (lines 135-143) is just a Cancel button. So on the external-IdP TOTP flow (totpEmail set by getServerSideProps, lines 284-289) there is no way to switch to BackupCode. Together with issue 5, this means SSO users with 2FA get no backup-code recovery path. It is a scope gap rather than a regression."
+  },
+  {
+    "id": 7,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "apps/web/components/auth/BackupCode.tsx:7 declares `export default function TwoFactor({ center = true })`, apparently copied from TwoFactor.tsx. Default imports are renamed at the call sites (login.tsx, DisableTwoFactorModal.tsx), so nothing breaks at runtime, but React DevTools and stack traces will show 'TwoFactor' for the backup-code component. It is a trivial rename to BackupCode."
+  },
+  {
+    "id": 8,
+    "verdict": "VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "apps/web/playwright/login.2fa.e2e.ts:110-125 only tests the download and copy buttons and the close action on the new backup-codes screen, and the file-content and clipboard checks are left as TODOs. Line 12 has a TODO: 'add more backup code tests, e.g. login + disabling 2fa with backup'. No test covers logging in with a backup code (next-auth-options.ts:131-157), disabling 2FA with one (disable.ts:47-67), or rejecting a reused code. The PR checklist also admits tests weren't added. These are useful tests to have, not a correctness defect."
+  }
+]

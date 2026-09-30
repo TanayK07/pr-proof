@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "calcom_cal.com-8330",
+ "seconds": 329,
+ "stderr": "",
+ "cost_usd": 2.2394252,
+ "is_error": false,
+ "num_turns": 20,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Three of the eight validators are back, and all three found their draft VALID (drafts 1, 2 and 3). Waiting on the rest."
+}

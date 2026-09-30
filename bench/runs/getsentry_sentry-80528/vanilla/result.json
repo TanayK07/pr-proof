@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "getsentry_sentry-80528",
+ "seconds": 42,
+ "stderr": "",
+ "cost_usd": 0.19889279999999995,
+ "is_error": false,
+ "num_turns": 6,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "This PR is a straight move of existing code, and I found nothing it breaks. Both review comments are about bugs in the moved code that were already there before the PR. I wrote them to `bench/runs/getsentry_sentry-80528/vanilla/comments.json`.\n\nI checked the refactor itself:\n- Nothing else in `src/` or `tests/` imports the old names (`mark_failed_threshold`, `create_issue_platform_occurrence`, `SimpleCheckIn` from `mark_failed`). The `create_issue_platform_occurrence` that still appears belongs to the separate uptime module.\n- The tests mock `sentry.issues.producer.produce_occurrence_to_kafka` directly, so moving the code doesn't break those mocks.\n- The new modules don't import each other in a loop.\n- In `incidents.py`, `_` doesn't conflict with the translation helper, because that module doesn't import it.\n\nThe two comments:\n1. **`incident_occurrence.py:168`:** `get_monitor_environment_context` makes a copy of the config and replaces `schedule_type` with its readable label, then returns the original config instead. The copy is never used, so events show the raw number for `schedule_type` rather than the label. The fix is to return `config`.\n2. **`incident_occurrence.py:145`:** in `get_failure_reason`, if none of the failed check-ins has a recognised status, the list of counts is empty. The evidence text then reads \" check-ins detected\", and the docstring's \"A failed check-in was detected\" never appears."
+}

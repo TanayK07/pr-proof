@@ -1,0 +1,27 @@
+[
+  {
+    "path": "pkg/expr/reader.go",
+    "line": 195,
+    "body": "`enableSqlExpressions` is misleading. It computes `enabled := !IsEnabledGlobally(FlagSqlExpressions)` (so `enabled` is true when the flag is *off*), and then both branches return `false`. So the feature flag is never actually checked, and a reader will think the flag gates this when it doesn't. If the goal is to disable SQL expressions unconditionally, drop the toggle lookup and say so explicitly (e.g. `return false // SQL expressions disabled pending a safe engine, see CVE-2024-9264`). If it's meant to follow the flag, this should be `return h.features.IsEnabledGlobally(...)`. As written, someone who later 'fixes' the obvious double-negation could re-enable an unsandboxed path by accident."
+  },
+  {
+    "path": "pkg/expr/reader.go",
+    "line": 131,
+    "body": "The kill switch only covers the `ExpressionQueryReader` path. The legacy path in `nodes.go` (`buildCMDNode` → `case TypeSQL: UnmarshalSQLCommand(rn)`, which runs when `expressionParser` is off) never checks it. That path is currently rejected only because the stub `DB.RunCommands` returns an error, and the user gets a confusing `sql-invalid-sql` / \"error reading SQL command\" BadRequest instead of \"not implemented\". Put the guard in one place (`NewSQLCommand`/`UnmarshalSQLCommand`, or in `buildCMDNode` too) so the disablement doesn't depend on a stub failing by accident. This error should probably also be an `errutil` NotImplemented/BadRequest with a public message rather than a bare `fmt.Errorf`, so it surfaces as a 4xx and not a 500."
+  },
+  {
+    "path": "pkg/expr/sql/parser.go",
+    "line": 24,
+    "body": "The injection-prone pattern behind CVE-2024-9264 is still here. User SQL goes into `SELECT json_serialize_sql('%s')` through `fmt.Sprintf`, and the only escaping is doubling single quotes. It's harmless today only because `DB` is a stub. As soon as anyone plugs a real engine back into `sql.DB` (the interface looks designed for exactly that), this becomes an arbitrary-SQL/command execution vector again. Remove this code path, or at least add a prominent comment/TODO saying it must not be wired to a real engine as-is. Parsing should use a real parser or a parameterized call."
+  },
+  {
+    "path": "pkg/expr/sql/db.go",
+    "line": 9,
+    "body": "This stub keeps the old go-duck method surface (`RunCommands`, `QueryFramesInto`) under a neutral `NewInMemoryDB` name, with no doc comment saying it's intentionally a no-op security stub. Callers (`NewSQLCommand`, `SQLCommand.Execute`) still log at Warn/Error level on every attempt ('invalid sql query', 'Failed to query frames'), which makes it look like the user wrote bad SQL. Please document the stub and return a sentinel error (e.g. `ErrSQLExpressionsDisabled`) that callers can detect and report properly."
+  },
+  {
+    "path": "pkg/expr/sql_command.go",
+    "line": 100,
+    "body": "`Execute` now always fails with 'not implemented', but `rsp.Error` wraps it the same way as a real query failure. Also, `sql_command_test.go` and every test in `parser_test.go` are `t.Skip()`'d, so nothing verifies that SQL expressions are actually rejected on either the reader path or the legacy `nodes.go` path. For a security fix, add a regression test that asserts a `type: sql` expression is refused on both paths."
+  }
+]

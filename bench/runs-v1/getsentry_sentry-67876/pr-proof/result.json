@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "getsentry_sentry-67876",
+ "seconds": 214,
+ "stderr": "",
+ "cost_usd": 1.3554753999999998,
+ "is_error": false,
+ "num_turns": 15,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I've written 5 draft findings and saved a copy to `drafts_raw.json`. Three independent validators are now checking them; I'll apply their verdicts when all of them return."
+}

@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "keycloak_keycloak-37634",
+ "seconds": 308,
+ "stderr": "",
+ "cost_usd": 2.2228082,
+ "is_error": false,
+ "num_turns": 21,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I've started five validators covering the seven drafts. I'll wait for all of them to return before writing the final kept/dropped file."
+}

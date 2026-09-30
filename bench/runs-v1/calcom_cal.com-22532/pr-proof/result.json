@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "calcom_cal.com-22532",
+ "seconds": 308,
+ "stderr": "",
+ "cost_usd": 1.4345185999999996,
+ "is_error": false,
+ "num_turns": 16,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR review draft for #22532: 5 comments kept, 1 dropped in validation\n\nThis is a draft only: nothing was posted and GitHub wasn't called. I didn't modify the repository. `drafts_raw.json` has all six findings as written. `drafts.json` has `{\"kept\": [...], \"dropped\": [...]}` with each validator's verdict and evidence.\n\n### MEDIUM severity (1)\n- **`CredentialActionsDropdown.tsx:45`**: after a successful \"Delete cached data\", the calendar list isn't refreshed. On the event type's Advanced tab, no refresh callback is passed in, so the menu keeps showing \"Last updated\u2026\" and the delete option until the page is reloaded. The disconnect action in the same file does refresh the list; the fix is to do the same for cache deletion.\n\n### LOW severity (4)\n- **`CalendarService.ts:1024`**: `updateManyByCredentialId(id, {})` passes an empty update, and Prisma only sets `@updatedAt` when there is at least one field to write. So `SelectedCalendar.updatedAt` never changes, and every webhook runs a query that does nothing. The new `updatedAt`/`googleChannelId` fields added to the user query aren't read anywhere either. The validator couldn't check the Prisma source (no `node_modules` here), so the Prisma part is based on known behaviour. I lowered this from MEDIUM to LOW at the validator's suggestion.\n- **`deleteCache.handler.ts:25`**: a plain `Error` for a missing or someone else's credential comes back as a 500 and gets reported to Sentry as a server fault. It should be a `TRPCError` with `NOT_FOUND`.\n- **`CredentialActionsDropdown.tsx:89`**: the date is formatted with a hardcoded `\"en-US\"`, so non-US users see a US-style date inside translated text. This is the only such case in the codebase; elsewhere it uses `i18n.language` from `useLocale`.\n- **`scripts/test-gcal-webhooks.sh:68`**: `sed -i ''` only works on macOS. The validator ran it with GNU sed 4.8: it failed and left `.env` unchanged, but the script still printed its success message.\n\n### Dropped in validation (1)\n- **`connectedCalendars.handler.ts:28`**: I claimed the cache-status query skips the `calendar-cache` feature flag and counts expired rows, so the menu would show a cache that isn't used. This doesn't hold:\n  - Turning the flag off deletes the whole cache table, and nothing writes to it while the flag is off.\n  - Expired rows are removed by the cleanup cron. Until then, their timestamp is still accurate.\n\n  What's left is a consistency point, not a bug."
+}

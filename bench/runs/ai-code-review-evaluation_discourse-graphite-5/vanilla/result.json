@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "ai-code-review-evaluation_discourse-graphite-5",
+ "seconds": 77,
+ "stderr": "",
+ "cost_usd": 0.2833042,
+ "is_error": false,
+ "num_turns": 8,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote 7 review comments to `comments.json` (valid JSON; the repo is unchanged). These come from reading the diff against the templates and the other stylesheets. I didn't render the app, so none of the layout effects have been checked in a browser.\n\n**Likely visible regressions:**\n1. **Small-action buttons move** (`topic-post.scss:280`): `.small-action` is now a flex row, but `.small-action-desc` isn't set to grow. It shrinks to fit its text, so the floated edit/delete buttons end up right next to the text instead of at the right edge.\n2. **Mobile custom messages shift left** (`topic-post.scss:280`): the left padding dropped from `4em` to `1.5%`. The mobile stylesheet still has `.custom-message { margin-left: -40px }`, which was sized to cancel the old 4em, so messages now get pushed past the left edge.\n3. **Leftover clearfix in the header** (`header.scss:18`): `.contents` still has the `clearfix` class. Its `:before`/`:after` pseudo-elements now count as flex items, and `:after` lands between the logo and the reordered topic info and panel.\n4. **Header vertical spacing changes** (`topic.scss:32`): the new `line-height: 1.5` on `.extra-info-wrapper` gets inherited by all its children, and the bullet `margin-top` was removed. The two-row docked header (topics with a category) could get clipped.\n\n**Problems with the new mixins and legacy browsers:**\n5. **Panel not right-aligned in legacy browsers** (`header.scss:37`): `.panel` now relies on `margin-left: auto` instead of a float. The old `-webkit-box`/`-moz-box` layouts that the mixin also outputs don't honour that, so in those browsers the panel won't sit on the right.\n6. **`align-items` mixin** (`mixins.scss:121`): `-ms-align-items` isn't a real property. The mixin also passes its value straight to the legacy prefixes, which reject `flex-start`/`flex-end`.\n7. **`order` mixin** (`mixins.scss:126`): the legacy `box-ordinal-group` is 1-based while `order` starts at 0, so `order(0)` or negative values produce invalid or different ordering. The legacy value should be `$val + 1`."
+}

@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "getsentry_sentry-80168",
+ "seconds": 152,
+ "stderr": "",
+ "cost_usd": 0.8644167999999999,
+ "is_error": false,
+ "num_turns": 12,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR review summary: 1 comment kept, 1 draft dropped by validation\n\nThis was a draft run, so nothing was posted to GitHub and the repository wasn't changed. There's no PR link because there was no network access.\n\nI drafted only two comments. The main change, `evaluate` returning a dict keyed by group key, is consistent across the base class, the stateful handler and `process_detectors`. Removing the duplicate-group-key logging is safe because `get_group_key_values` already returns a dict, so duplicate keys couldn't happen anyway. The new `PriorityLevel(new_status)` conversion only runs for LOW, MEDIUM and HIGH, which map one-to-one onto `PriorityLevel`.\n\n### LOW severity (1)\n- **`src/sentry/incidents/grouptype.py:11`**: `MetricAlertDetectorHandler` is now just `pass` on top of `StatefulDetectorHandler`. It doesn't implement four required abstract members (`counter_names`, `get_dedupe_value`, `get_group_key_values` and the new `build_occurrence_and_event_data`), so Python can't create it.\n  - **What breaks:** creating a handler for a `metric_alert_fire` detector raises `TypeError`. `process_detectors` doesn't catch it, so every detector after that one in the batch goes unevaluated.\n  - **Why only LOW:** nothing fails today. `process_detectors` is only called from tests, and nothing creates `metric_alert_fire` detectors yet.\n  - **Suggested fix:** add placeholder implementations of the four members, plus a test that the handler can be created.\n  - **Verdict:** partially valid. I first drafted this as MEDIUM, and the validator confirmed the `TypeError` by reproducing it. I rewrote the comment to describe it as a future risk rather than a live bug.\n\n### Dropped in validation (1)\n- **`TestEvaluateGroupKeyValue.test_dedupe` can't pass** because the expected occurrence is built with group key `\"val1\"` while the code under test uses `\"group_key\"`, so the fingerprints differ. This was wrong: `IssueOccurrence` defines its own `__eq__` that compares only `id` (`issue_occurrence.py:181-184`), and the test helper always sets the same id. The assertion passes, and the mismatched arguments are only cosmetic.\n\nFiles are in `bench/runs/getsentry_sentry-80168/pr-proof/`:\n- `drafts_raw.json` is a copy of the two drafts from before validation.\n- `drafts.json` holds `{\"kept\": [...], \"dropped\": [...]}`, with each validator's verdict and evidence on its entry."
+}

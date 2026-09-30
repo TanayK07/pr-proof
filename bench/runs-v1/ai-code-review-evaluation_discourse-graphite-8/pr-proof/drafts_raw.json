@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "path": "app/controllers/admin/groups_controller.rb",
+    "line": 73,
+    "severity": "HIGH",
+    "category": "ISSUE",
+    "claim": "add_members calls group.add(user) for users who are already members, which inserts a duplicate GroupUser row, hits the unique (group_id,user_id) index and raises ActiveRecord::RecordNotUnique (500), leaving earlier usernames in the batch already committed.",
+    "body": "## [ISSUE] Adding a user who is already a member raises RecordNotUnique (500) and leaves a partial batch applied\n\n**Severity:** HIGH -- the ordinary admin action \"add members\" fails with a server error whenever one of the usernames is already in the group\n\n### The Problem\n```ruby\nusernames.split(\",\").each do |username|\n  if user = User.find_by_username(username)\n    group.add(user)\n  end\nend\n```\n`Group#add` is `self.users.push(user)` (app/models/group.rb:272). On a persisted group, `push` on a `has_many :through` saves the new `GroupUser` join row right away. Nothing checks whether the user is already a member.\n\n### Theory / Proof\n- `db/migrate/20130416004933_group_users.rb:9` adds a unique index on `group_users(group_id, user_id)`, and `GroupUser` has no uniqueness validation, so the duplicate insert goes to the database and raises `ActiveRecord::RecordNotUnique`.\n- Each `push` commits on its own. With `usernames=a,b,c` where `b` is already a member, `a` gets added, then the request dies with a 500 on `b`, and `c` is never processed.\n- Before this PR the admin UI sent the full list through `usernames=` (group.rb:244), which diffs `expected - current`, so duplicates could not happen from the UI.\n\n### What happens today vs. what will break\nToday an admin who pastes a list that includes an existing member, or who clicks \"Add\" twice (the input is not cleared, see the `// TODO` in admin-group.js.es6), gets a 500 and a group that is only partly updated.\n\n### Research\nRails' `collection<<` does not deduplicate on `has_many :through` (see the ActiveRecord Associations guide, \"collection<<(object, ...)\"). The usual fix is to filter first or rely on `find_or_create_by`.\n\n### Recommendation\n```ruby\nexisting = group.users.pluck(:username_lower)\nUser.where(username_lower: usernames.split(\",\").map(&:downcase) - existing).each do |user|\n  group.add(user)\nend\n```\nAlso add a spec that adds an existing member and expects a 200.\n"
+  },
+  {
+    "id": 2,
+    "path": "app/controllers/admin/groups_controller.rb",
+    "line": 90,
+    "severity": "MEDIUM",
+    "category": "ISSUE",
+    "claim": "remove_member uses group.users.delete(user_id), which delete_all's the GroupUser row without callbacks, so groups.user_count (belongs_to counter_cache on GroupUser) is never decremented and the removed user's primary_group_id is not cleared as the old usernames= path did.",
+    "body": "## [ISSUE] `remove_member` skips the counter cache and leaves `primary_group_id` pointing at the group\n\n**Severity:** MEDIUM -- `user_count` drifts upward and removed users keep showing the group's flair/title\n\n### The Problem\n```ruby\ngroup.users.delete(user_id)\n```\n\n### Theory / Proof\n- `GroupUser` declares `belongs_to :group, counter_cache: \"user_count\"` (app/models/group_user.rb:2). That counter changes only through GroupUser callbacks (create/destroy).\n- In Rails 4.1.8 (Gemfile.lock), `has_many :through` `delete` uses the `:delete_all` strategy by default: `HasManyThroughAssociation#delete_records` runs `scope.delete_all` on the join table without instantiating `GroupUser`, so the belongs_to counter-cache callback never runs. The through-counter update it does try looks for `group_users_count`, which does not exist.\n- The replaced code path (`usernames=` + `destroy_deletions`, group.rb:285-293) called `gu.destroy` (which decrements `user_count`) and also ran `User.where(id:, primary_group_id: group.id).update_all 'primary_group_id = NULL'`. The new endpoint does neither.\n\n### What happens today vs. what will break\n`add_members` increments `user_count` (via `push`, which creates a GroupUser), but `remove_member` never decrements it. `BasicGroupSerializer` exposes `user_count`, so the admin group list and the \"Group members (N)\" label show numbers that are too high. Removed users whose primary group was this one keep `primary_group_id`, so `PostSerializer#primary_group_name` (post_serializer.rb:96) still shows the group on their posts.\n\n### Recommendation\n```ruby\nuser = User.find(params.require(:user_id).to_i)\ngroup.remove(user)  # destroys GroupUser -> counter cache decremented\nUser.where(id: user.id, primary_group_id: group.id).update_all(primary_group_id: nil)\nrender json: success_json\n```\n"
+  },
+  {
+    "id": 3,
+    "path": "app/assets/javascripts/admin/controllers/admin-group.js.es6",
+    "line": 13,
+    "severity": "MEDIUM",
+    "category": "ISSUE",
+    "claim": "totalPages uses Math.floor(user_count/limit)+1, which overcounts by one when user_count is an exact multiple of limit (e.g. 50 members -> 2 pages), so Next leads to an empty page.",
+    "body": "## [ISSUE] `totalPages` is off by one when `user_count` is a multiple of `limit`\n\n**Severity:** MEDIUM -- pagination shows a page that does not exist and lets the admin go to an empty member list\n\n### The Problem\n```js\ntotalPages: function() {\n  if (this.get(\"user_count\") == 0) { return 0; }\n  return Math.floor(this.get(\"user_count\") / this.get(\"limit\")) + 1;\n}.property(\"limit\", \"user_count\"),\n```\n\n### Theory / Proof\nWith `limit = 50`:\n| user_count | floor(n/50)+1 | correct ceil(n/50) |\n|---|---|---|\n| 49 | 1 | 1 |\n| 50 | **2** | 1 |\n| 100 | **3** | 2 |\n\nAt `user_count = 50`, `showingLast` (`currentPage == totalPages`) is false on page 1. `next` computes `offset = Math.min(0 + 50, 50) = 50`, and `findMembers` requests `offset=50`, which returns `[]`. The UI then shows \"2/2\" with no members.\n\n### Recommendation\n```js\nreturn Math.ceil(this.get(\"user_count\") / this.get(\"limit\"));\n```\n(the `== 0` guard is then unnecessary). The same reasoning means `next` should clamp to `(totalPages - 1) * limit`, not to `user_count`.\n"
+  },
+  {
+    "id": 4,
+    "path": "app/assets/javascripts/discourse/routes/group-members.js.es6",
+    "line": 11,
+    "severity": "MEDIUM",
+    "category": "GAP ANALYSIS",
+    "claim": "The public /groups/:name/members page now only receives the first 50 members (server default limit) and has no pagination UI, so members beyond 50 cannot be seen, whereas previously non-automatic groups listed all members.",
+    "body": "## [GAP ANALYSIS] Public group members page is silently truncated to 50\n\n**Severity:** MEDIUM -- visible regression for any group with more than 50 members\n\n### The Problem\n```js\nsetupController: function(controller, model) {\n  this.controllerFor('group').set('showing', 'members');\n  controller.set(\"model\", model);\n  model.findMembers();\n}\n```\n`findMembers` sends `limit: this.get(\"limit\")` (50 by default in `Discourse.Group`), and `GroupsController#members` now pages every group (`limit = (params[:limit] || 50).to_i`). `templates/group/members.hbs` iterates `members` with no next/previous controls and no \"load more\".\n\n### What happens today vs. what will break\nBefore the PR, `GroupsController#members` returned **all** users for non-automatic groups (limit/offset applied only when `group.automatic?`). After the PR, a custom group with 120 members shows 50 names on its public page and nothing tells the user the list is incomplete. Meanwhile the group header count (`/groups/:id/counts`) still says 120.\n\n### Recommendation\nReuse the pagination the admin screen gets: move `next`/`previous`/`currentPage`/`totalPages` into a mixin or into `Discourse.Group`, and add the controls to `group/members.hbs`. Or add infinite-scroll `loadMore` that appends `result.members` while `offset + limit < user_count`.\n"
+  },
+  {
+    "id": 5,
+    "path": "app/assets/javascripts/admin/controllers/admin-group.js.es6",
+    "line": 64,
+    "severity": "LOW",
+    "category": "ISSUE",
+    "claim": "usernames lives on the singleton admin-group controller and is never cleared after addMembers or on model change, so the typed usernames persist and can be added to a different group when the admin navigates and clicks Add.",
+    "body": "## [ISSUE] `usernames` is never cleared and leaks between groups\n\n**Severity:** LOW -- the wrong users can end up in the wrong group through ordinary navigation\n\n### The Problem\n```js\naddMembers: function() {\n  // TODO: should clear the input\n  if (Em.isEmpty(this.get(\"usernames\"))) { return; }\n  this.get(\"model\").addMembers(this.get(\"usernames\"));\n},\n```\n`usernames: null` is defined on the controller, not on the model. Ember controllers are singletons, and `AdminGroupRoute#setupController` only swaps `model`.\n\n### What happens today vs. what will break\n1. The admin types `alice,bob` for group A and clicks Add. The input is not cleared.\n2. The admin clicks group B in the sidebar. Same controller, `usernames` is still `\"alice,bob\"`.\n3. The admin clicks Add (or clicks Add again on A). Both users are PUT again. On A that re-adds existing members and triggers the unique-index 500 described in the add_members comment. On B they get added without the admin meaning to.\n\n### Recommendation\n```js\naddMembers: function() {\n  if (Em.isEmpty(this.get(\"usernames\"))) { return; }\n  var self = this;\n  this.get(\"model\").addMembers(this.get(\"usernames\")).then(function() {\n    self.set(\"usernames\", null);\n  });\n},\n```\nand reset in the route: `controller.setProperties({ model: model, usernames: null });`.\n"
+  },
+  {
+    "id": 6,
+    "path": "app/controllers/admin/groups_controller.rb",
+    "line": 24,
+    "severity": "LOW",
+    "category": "GAP ANALYSIS",
+    "claim": "create/update now read params[:name]/params[:visible] at top level instead of params[:group][...], and the PATCH changes[add|delete] API was removed, silently breaking existing API clients (e.g. discourse_api gem) that send nested group params: create fails with a blank name and update ignores all fields.",
+    "body": "## [GAP ANALYSIS] Admin groups API contract changed without compatibility\n\n**Severity:** LOW -- external integrations break silently rather than with a clear error\n\n### The Problem\nBefore: `POST /admin/groups` with `group[name]`, `group[usernames]`, `group[visible]`; `PUT /admin/groups/:id` with `group[...]`; `PATCH /admin/groups/:id` with `changes[add]`/`changes[delete]`.\nAfter: top-level `name`/`visible`/`alias_level` only, PATCH incremental changes removed, and members managed via `PUT/DELETE /admin/groups/:group_id/members`.\n\n### What happens today vs. what will break\n- A client that still sends `group[name]=foo` to create now gets `group.name = ''`, and validation fails with a name-format error rather than a clear \"parameter moved\" message.\n- A client sending `PUT group[visible]=true` gets a 200 `success_json`, but `visible` is set to `false` (because `params[:visible] == \"true\"` is false) and nothing else changes. That is a silent data change.\n- `PATCH ... changes[add]` now routes to `update` (Rails maps PATCH to update), which also returns 200 and sets `visible=false` without adding anyone.\n\n### Recommendation\nAccept both shapes during a deprecation window:\n```ruby\ndef group_params\n  params[:group].is_a?(Hash) ? params[:group] : params\nend\n```\nand in `update`, only change `visible` when `params.has_key?(:visible)`. Otherwise, document the breaking change in the PR/release notes.\n"
+  },
+  {
+    "id": 7,
+    "path": "app/controllers/groups_controller.rb",
+    "line": 22,
+    "severity": "LOW",
+    "category": "ISSUE",
+    "claim": "GroupsController#members passes the user-supplied limit straight to SQL with no upper bound or sign check, so limit=-1 raises a PG error (500) and a very large limit returns every member.",
+    "body": "## [ISSUE] Unvalidated `limit` / `offset` on the public members endpoint\n\n**Severity:** LOW -- a trivially triggerable 500, plus unbounded result size on a public endpoint\n\n### The Problem\n```ruby\nlimit = (params[:limit] || 50).to_i\noffset = params[:offset].to_i\nmembers = group.users.order(:username_lower).limit(limit).offset(offset)\n```\n\n### Theory / Proof\nPostgreSQL rejects negative values: `LIMIT must not be negative` / `OFFSET must not be negative` (PostgreSQL docs, SELECT > LIMIT clause). `?limit=-1` or `?offset=-5` therefore turns into an unhandled `ActiveRecord::StatementInvalid` and a 500. `?limit=1000000` serializes the whole membership of a large automatic group (e.g. trust_level_0) in one request, which the pagination was meant to prevent.\n\n### Recommendation\n```ruby\nlimit  = [[(params[:limit] || 50).to_i, 1].max, 200].min\noffset = [params[:offset].to_i, 0].max\n```\n"
+  },
+  {
+    "id": 8,
+    "path": "spec/controllers/admin/groups_controller_spec.rb",
+    "line": 115,
+    "severity": "LOW",
+    "category": "ISSUE",
+    "claim": "The 'cannot remove members from automatic groups' spec issues xhr :put against remove_member, which is routed only as DELETE, so it does not exercise the real route.",
+    "body": "## [ISSUE] remove_member automatic-group spec uses the wrong HTTP verb\n\n**Severity:** LOW -- the test does not match the real route, so a routing regression would not be caught\n\n### The Problem\n```ruby\nit \"cannot remove members from automatic groups\" do\n  xhr :put, :remove_member, group_id: 1, user_id: 42\n```\n`config/routes.rb` maps `remove_member` only as `delete \"members\"`. Rails 4.1 controller tests call the action directly and do not check the verb, so this passes but tests a request the router would send to `add_members`.\n\n### Recommendation\n```ruby\nxhr :delete, :remove_member, group_id: 1, user_id: 42\n```\n"
+  }
+]

@@ -1,0 +1,106 @@
+{
+  "kept": [
+    {
+      "id": 1,
+      "path": "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+      "line": 47,
+      "severity": "HIGH",
+      "category": "ISSUE",
+      "claim": "isTeamAdminOrOwner combines isTeamAdmin && isTeamOwner, so team ADMINs (non-owners) are rejected with FORBIDDEN; only OWNERs pass.",
+      "body": "## [ISSUE] `isTeamAdmin && isTeamOwner` locks team admins out\n\n**Severity:** HIGH \u2014 team admins cannot add guests to their team's bookings; the variable name promises \"admin OR owner\".\n\n### The Problem\n```ts\nconst isTeamAdminOrOwner =\n  (await isTeamAdmin(user.id, booking.eventType?.teamId ?? 0)) &&\n  (await isTeamOwner(user.id, booking.eventType?.teamId ?? 0));\n```\n\n### Theory / Proof\n`packages/lib/server/queries/teams/index.ts:264-284` \u2014 `isTeamAdmin` already matches `OR: [{ role: \"ADMIN\" }, { role: \"OWNER\" }]`. `isTeamOwner` (`:286-295`) matches only `role: \"OWNER\"`. ANDing them reduces the check to \"is OWNER\". A member with role `ADMIN` gets `isTeamAdmin` truthy and `isTeamOwner` false, so `isTeamAdminOrOwner === false`, and unless they are also the organizer/attendee they hit `FORBIDDEN` at line 54.\n\n### What happens today vs. what will break\nOwners work; admins managing a round-robin/collective booking hosted by another member get `you_do_not_have_permission`.\n\n### Research\nElsewhere in the codebase `isTeamAdmin` alone is used as the admin-or-owner check (it returns the membership for either role).\n\n### Recommendation\n```ts\nconst teamId = booking.eventType?.teamId;\nconst isTeamAdminOrOwner = teamId ? !!(await isTeamAdmin(user.id, teamId)) : false;\n```\n(`isTeamAdmin` already covers OWNER; also avoid querying `teamId: 0`.)\n",
+      "verdict": "VALID",
+      "evidence": "addGuests.handler.ts:46-48 ANDs isTeamAdmin with isTeamOwner; teams/index.ts:264-284 shows isTeamAdmin already matches ADMIN or OWNER, and isTeamOwner (286-295) matches only OWNER, so the check passes only for owners. A non-organizer, non-attendee ADMIN gets FORBIDDEN at 54-55."
+    },
+    {
+      "id": 2,
+      "path": "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+      "line": 54,
+      "severity": "MEDIUM",
+      "category": "GAP ANALYSIS",
+      "claim": "Attendee access is intentional, but the handler does not respect the event type's guests booking field (hidden/disabled). An attendee who has a Cal.com account can add guests and trigger organizer-branded invite emails even when the organizer disabled guests for that event type, and nothing caps or rate-limits this.",
+      "body": "## [GAP ANALYSIS] Attendees can add guests even when the event type hides/disables the guests field\n\n**Severity:** MEDIUM \u2014 the organizer's \"no guests\" setting for an event type can be bypassed after booking, and every call sends organizer-branded invites.\n\n### The Problem\n```ts\nconst isAttendee = !!booking.attendees.find((attendee) => attendee.email === user.email);\nif (!isTeamAdminOrOwner && !isOrganizer && !isAttendee) { throw ... }\n```\nLetting attendees in looks intentional. However, nothing in the handler reads `booking.eventType.bookingFields`, so if the organizer hid or disabled the `guests` booking field, an attendee with a Cal.com account can still add arbitrary guests here.\n\n### Theory / Proof\n- At booking time, guests enter only through the booking form, which respects the event type's `guests` field. This endpoint is a second entry point that skips that rule.\n- Each successful call runs `sendAddGuestsEmails` (`email-manager.ts:525-550`). That sends an ICS `METHOD:REQUEST` to every attendee, with the organizer's name in `from` (`attendee-add-guests-email.ts`). The route (`_router.tsx`, `authedProcedure`) has no rate limit.\n\n### What happens today vs. what will break\nAn organizer who disabled guests for an event type (\"1:1 only\") can still have extra people added, and invited in the organizer's name, by the booker.\n\n### Recommendation\nEnforce the event type's guest setting for non-organizer callers:\n```ts\nconst guestsField = eventTypeBookingFields\n  .parse(booking.eventType?.bookingFields ?? [])\n  .find((f) => f.name === \"guests\");\nif (isAttendee && !isOrganizer && !isTeamAdminOrOwner && guestsField?.hidden) {\n  throw new TRPCError({ code: \"FORBIDDEN\", message: \"you_do_not_have_permission\" });\n}\n```\nConsider adding a rate limit (e.g. `checkRateLimitAndThrowError` keyed on user id), as other email-sending endpoints do.\n",
+      "verdict": "PARTIALLY_VALID",
+      "evidence": "Attendee access (handler:52-56) is an explicit, intentional branch, so 'attendees can add guests' is by design. What holds: the handler never reads eventType.bookingFields, so a hidden/disabled guests field is not enforced; each call sends emails via sendAddGuestsEmails (email-manager.ts:525-550), and the route has no rate limit.",
+      "corrected_claim": "Attendee access is intentional, but the handler does not respect the event type's guests booking field (hidden/disabled). An attendee who has a Cal.com account can add guests and trigger organizer-branded invite emails even when the organizer disabled guests for that event type, and nothing caps or rate-limits this."
+    },
+    {
+      "id": 3,
+      "path": "packages/trpc/server/routers/viewer/bookings/addGuests.schema.ts",
+      "line": 5,
+      "severity": "MEDIUM",
+      "category": "ISSUE",
+      "claim": "Server schema accepts an unbounded guests array with no dedup, so duplicate emails in one request create duplicate Attendee rows and there is no cap on emails sent per call.",
+      "body": "## [ISSUE] Unbounded, non-deduplicated `guests` input\n\n**Severity:** MEDIUM \u2014 duplicate attendee rows and unbounded email fan-out per request.\n\n### The Problem\n```ts\nguests: z.array(z.string().email()),\n```\nUniqueness is only enforced in the client (`AddGuestsDialog.tsx` `refine`). The handler's `uniqueGuests` filter (line 74) only removes emails already on the booking, not duplicates inside the request.\n\n### Theory / Proof\nRequest `{ bookingId, guests: [\"a@x.com\", \"a@x.com\"] }`: both pass the filter, `createMany` inserts two Attendee rows (Attendee has no unique constraint on `(bookingId, email)`), and `sendAddGuestsEmails` sends two emails to that address. An array of thousands of addresses is also accepted.\n\n### What happens today vs. what will break\nVia the UI it works because the dialog dedupes. Any direct tRPC call (or a future client) bypasses this.\n\n### Research\nZod supports `.max()` and `.refine`/`.transform` on arrays; tRPC recommends validating on the server since the client is untrusted.\n\n### Recommendation\n```ts\nguests: z\n  .array(z.string().email().transform((e) => e.toLowerCase()))\n  .min(1)\n  .max(10)\n  .transform((arr) => Array.from(new Set(arr))),\n```\n",
+      "verdict": "VALID",
+      "evidence": "addGuests.schema.ts:5 has no .max() and no dedup; the only uniqueness check is client-side (AddGuestsDialog.tsx:26-29). The handler filter (74-78) does not dedupe within the request. The Attendee model (schema.prisma:526-539) has no unique (bookingId,email), so createMany inserts duplicates and email-manager.ts:539-546 sends one email per row."
+    },
+    {
+      "id": 4,
+      "path": "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+      "line": 76,
+      "severity": "MEDIUM",
+      "category": "ISSUE",
+      "claim": "Guest emails are compared case-sensitively against the lowercased blacklist and existing attendees, so 'Blocked@Spam.com' bypasses BLACKLISTED_GUEST_EMAILS and existing attendees can be re-added with different casing.",
+      "body": "## [ISSUE] Blacklist and duplicate checks are case-sensitive\n\n**Severity:** MEDIUM \u2014 `BLACKLISTED_GUEST_EMAILS` can be bypassed by changing letter case.\n\n### The Problem\n```ts\nconst blacklistedGuestEmails = process.env.BLACKLISTED_GUEST_EMAILS\n  ? process.env.BLACKLISTED_GUEST_EMAILS.split(\",\").map((email) => email.toLowerCase())\n  : [];\nconst uniqueGuests = guests.filter(\n  (guest) =>\n    !booking.attendees.some((attendee) => guest === attendee.email) &&\n    !blacklistedGuestEmails.includes(guest)\n);\n```\nThe list is lowercased but `guest` is not.\n\n### Theory / Proof\nWith `BLACKLISTED_GUEST_EMAILS=spam@x.com`, the guest `Spam@x.com` gives `[\"spam@x.com\"].includes(\"Spam@x.com\") === false`, so it is added and emailed. `z.string().email()` does not normalise case. Mail domains are case-insensitive, and in practice mailbox local parts are too, so this reaches the blocked mailbox. The existing flow does it right: `handleNewBooking.ts:742-744` lowercases the guest (and strips `+` aliases via `extractBaseEmail`) before comparing.\n\n### Research\nRFC 5321 \u00a72.4: domain names are case-insensitive; nearly all providers treat local parts case-insensitively.\n\n### Recommendation\n```ts\nconst uniqueGuests = guests.filter((guest) => {\n  const normalized = extractBaseEmail(guest).toLowerCase();\n  return (\n    !booking.attendees.some((a) => a.email.toLowerCase() === guest.toLowerCase()) &&\n    !blacklistedGuestEmails.includes(normalized)\n  );\n});\n```\n",
+      "verdict": "VALID",
+      "evidence": "handler:70-72 lowercases the blacklist, but 74-78 compare the raw guest (includes / ===), and neither the zod schema nor the dialog normalises case. handleNewBooking.ts:736-744 correctly compares extractBaseEmail(guest).toLowerCase()."
+    },
+    {
+      "id": 5,
+      "path": "packages/emails/email-manager.ts",
+      "line": 525,
+      "severity": "MEDIUM",
+      "category": "GAP ANALYSIS",
+      "claim": "sendAddGuestsEmails ignores the event type's disableStandardEmails metadata (eventTypeDisableHostEmail / eventTypeDisableAttendeeEmail), unlike sendLocationChangeEmails right above it.",
+      "body": "## [GAP ANALYSIS] Add-guests emails ignore the event type's \"disable standard emails\" settings\n\n**Severity:** MEDIUM \u2014 organizers who turned off Cal.com's standard emails (e.g. to send their own via workflows) still get these sent to hosts and attendees.\n\n### The Problem\n```ts\nexport const sendAddGuestsEmails = async (calEvent: CalendarEvent, newGuests: string[]) => {\n  ...\n  emailsToSend.push(sendEmail(() => new OrganizerAddGuestsEmail({ calEvent: calendarEvent })));\n```\nIt has no `eventTypeMetadata` parameter and sends unconditionally.\n\n### Theory / Proof\nThe sibling function directly above (`email-manager.ts:495-524`, `sendLocationChangeEmails`) takes `eventTypeMetadata` and wraps host emails in `if (!eventTypeDisableHostEmail(eventTypeMetadata))` and attendee emails in `if (!eventTypeDisableAttendeeEmail(eventTypeMetadata))`. `editLocation.handler.ts` passes `booking.eventType?.metadata`. `addGuests.handler.ts:168` passes nothing.\n\n### Recommendation\n```ts\nexport const sendAddGuestsEmails = async (calEvent: CalendarEvent, newGuests: string[], eventTypeMetadata?: EventTypeMetadata) => {\n  ...\n  if (!eventTypeDisableHostEmail(eventTypeMetadata)) { /* organizer + team member emails */ }\n  if (!eventTypeDisableAttendeeEmail(eventTypeMetadata)) { /* attendee emails */ }\n};\n// handler\nawait sendAddGuestsEmails(evt, uniqueGuests, booking.eventType?.metadata as EventTypeMetadata);\n```\n",
+      "verdict": "VALID",
+      "evidence": "email-manager.ts:525-548 takes no eventTypeMetadata and sends unconditionally. The sibling sendLocationChangeEmails (495-523) and almost all other senders check eventTypeDisableHostEmail/AttendeeEmail (81-87). The handler loads eventType (line 32) but does not pass its metadata (line 168)."
+    },
+    {
+      "id": 6,
+      "path": "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+      "line": 137,
+      "severity": "MEDIUM",
+      "category": "ISSUE",
+      "claim": "evt omits iCalUID/iCalSequence, so the REQUEST ICS uses booking.uid as UID while the original invite used `${uid}@Cal.com`; recipients' calendar clients create a duplicate event instead of updating the existing one.",
+      "body": "## [ISSUE] ICS update uses a different UID than the original invite\n\n**Severity:** MEDIUM \u2014 existing attendees get a second copy of the meeting in their calendar instead of an update.\n\n### The Problem\n```ts\nconst evt: CalendarEvent = {\n  ...\n  uid: booking.uid,\n  // no iCalUID, no iCalSequence\n```\n`generateIcsString` uses `uid: event.iCalUID || event.uid!` and `sequence: event.iCalSequence || 0`.\n\n### Theory / Proof\nNew bookings store `iCalUID = getICalUID({ uid })` which is `${uid}@${APP_NAME}` (`packages/emails/lib/getICalUID.ts`, `handleNewBooking.ts:829`). The original confirmation ICS therefore has `UID:<uid>@Cal.com`. The add-guests ICS (`attendee-add-guests-email.ts`, `method: \"REQUEST\"`) has `UID:<uid>`. RFC 5545 \u00a73.8.4.7: UID identifies the component; RFC 5546 \u00a73.2.2: a REQUEST with a new UID is a new event, not an update. `booking.iCalUID`/`iCalSequence` are selected by the `findFirst` include but never copied into `evt`. `requestReschedule.handler.ts:199` shows the correct pattern (`iCalUID: bookingToReschedule.iCalUID`).\n\n### What happens today vs. what will break\nGmail/Outlook/Apple Calendar key events by UID. Existing attendees who accepted the first invite see a second event at the same time.\n\n### Recommendation\n```ts\nconst evt: CalendarEvent = {\n  ...\n  uid: booking.uid,\n  iCalUID: booking.iCalUID,\n  iCalSequence: (booking.iCalSequence ?? 0) + 1,\n```\n",
+      "verdict": "VALID",
+      "evidence": "handler:124-147 never sets iCalUID or iCalSequence, although include loads both (schema.prisma:592-593). generateIcsString falls back to event.uid and sequence 0. handleNewBooking.ts:829-832 stores `${uid}@${APP_NAME}` (getICalUID.ts:30), so the REQUEST ICS UID does not match the original invite."
+    },
+    {
+      "id": 7,
+      "path": "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+      "line": 44,
+      "severity": "MEDIUM",
+      "category": "GAP ANALYSIS",
+      "claim": "The handler does not reject CANCELLED/REJECTED bookings, so an authorized user (organizer, attendee or team admin) calling the API directly can add guests to a cancelled booking. Those guests then get a REQUEST ICS with status CONFIRMED. The past-booking part is not a gap, because the UI deliberately offers Add Guests on past confirmed bookings.",
+      "body": "## [GAP ANALYSIS] Guests can be added to cancelled/rejected bookings\n\n**Severity:** MEDIUM \u2014 new guests get a CONFIRMED meeting invite for a meeting that was cancelled.\n\n### The Problem\nAfter `if (!booking) throw ...` the handler goes straight to permission checks and `booking.update`. There is no check on `booking.status`.\n\n### Theory / Proof\nThe route is a plain `authedProcedure`, callable directly with any `bookingId` the caller can access (organizer, attendee, team owner). For a `CANCELLED` or `REJECTED` booking, the handler inserts the attendees and sends emails built in `attendee-add-guests-email.ts` / `organizer-add-guests-email.ts`. Those hard-code `status: \"CONFIRMED\"` and `method: \"REQUEST\"`, so every recipient's calendar treats the cancelled meeting as confirmed.\n\n### Recommendation\n```ts\nif (booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REJECTED) {\n  throw new TRPCError({ code: \"BAD_REQUEST\", message: \"booking_is_cancelled\" });\n}\n```\n",
+      "verdict": "PARTIALLY_VALID",
+      "evidence": "handler:44-56 has no booking.status check before createMany (92-106) and the CONFIRMED/REQUEST emails; a plain authedProcedure makes it directly callable. The past-booking part was disputed: the validator reported that the UI deliberately exposes edit actions for some past bookings, so it is not treated as a gap.",
+      "corrected_claim": "The handler does not reject CANCELLED/REJECTED bookings, so an authorized user (organizer, attendee or team admin) calling the API directly can add guests to a cancelled booking. Those guests then get a REQUEST ICS with status CONFIRMED. The past-booking part is not a gap, because the UI deliberately offers Add Guests on past confirmed bookings."
+    },
+    {
+      "id": 8,
+      "path": "packages/trpc/server/routers/viewer/bookings/addGuests.handler.ts",
+      "line": 168,
+      "severity": "LOW",
+      "category": "ISSUE",
+      "claim": "sendAddGuestsEmails is passed the raw `guests` input instead of `uniqueGuests`, so an existing attendee resubmitted in the list gets a fresh 'scheduled' email instead of the 'guests added' update.",
+      "body": "## [ISSUE] Email routing uses unfiltered `guests` instead of `uniqueGuests`\n\n**Severity:** LOW \u2014 wrong email template for existing attendees who appear in the input.\n\n### The Problem\n```ts\nawait sendAddGuestsEmails(evt, guests);\n```\nIn `email-manager.ts:541`, `newGuests.includes(attendee.email)` decides between `AttendeeScheduledEmail` (new booking confirmation) and `AttendeeAddGuestsEmail` (update).\n\n### Theory / Proof\nIf the request is `[\"existing@x.com\", \"new@x.com\"]` where `existing@x.com` is already an attendee, `uniqueGuests` correctly drops it from the insert, but `guests` still contains it, so the existing attendee is sent a new \"booking scheduled\" email instead of the \"new guests added\" update.\n\n### Recommendation\n```ts\nawait sendAddGuestsEmails(evt, uniqueGuests);\n```\n",
+      "verdict": "VALID",
+      "evidence": "handler:74-78 filters existing attendees into uniqueGuests, but line 168 passes the raw guests. email-manager.ts sendAddGuestsEmails picks AttendeeScheduledEmail when newGuests.includes(email), so an existing attendee who is resubmitted gets the 'scheduled' email."
+    },
+    {
+      "id": 9,
+      "path": "apps/web/components/dialog/AddGuestsDialog.tsx",
+      "line": 43,
+      "severity": "LOW",
+      "category": "ISSUE",
+      "claim": "The error toast fallback is unreachable because the template string is always truthy, and for non-tRPC errors it shows 'undefined: <raw message>'.",
+      "body": "## [ISSUE] Error toast fallback never used\n\n**Severity:** LOW \u2014 users can see `undefined: Failed to fetch` instead of the localized \"Unable to add guests\".\n\n### The Problem\n```ts\nconst message = `${err.data?.code}: ${t(err.message)}`;\nshowToast(message || t(\"unable_to_add_guests\"), \"error\");\n```\nA template literal is never an empty string (it always contains `\": \"`), so `|| t(\"unable_to_add_guests\")` never runs. When `err.data` is undefined (network error), the toast reads `undefined: ...`.\n\n### Recommendation\n```ts\nonError: (err) => {\n  const message = err.data?.code ? `${err.data.code}: ${t(err.message)}` : t(\"unable_to_add_guests\");\n  showToast(message, \"error\");\n},\n```\n",
+      "verdict": "VALID",
+      "evidence": "AddGuestsDialog.tsx:43: the template literal always contains ': ' so it is never falsy and the fallback on :44 is dead code. For non-tRPC errors err.data is undefined, and the toast shows 'undefined: ...'."
+    }
+  ],
+  "dropped": []
+}

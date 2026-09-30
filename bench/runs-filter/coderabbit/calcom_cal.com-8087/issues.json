@@ -1,0 +1,56 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Line 26 in getVideoAdapters can reject, and while createMeeting is protected by try/catch with fallback, updateMeeting, deleteMeeting, and getBusyVideoTimes all await getVideoAdapters without error handling - a single broken provider will fail all these paths"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "The for loop in getVideoAdapters serializes adapter loads, reducing performance compared to parallel loading"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "forEach with async callback in packages/app-store/vital/lib/reschedule.ts creates fire-and-forget promises that won't be awaited or caught - errors in getCalendar or deleteEvent/deleteMeeting will be silently swallowed"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "forEach with async callback in packages/app-store/wipemycalother/lib/reschedule.ts creates fire-and-forget promises - the email may be sent before deletions complete and function may return true before all operations finish"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "forEach with async callback in packages/trpc/server/routers/viewer/bookings.tsx creates fire-and-forget promises - errors won't propagate and sendRequestRescheduleEmail may execute before deletions complete"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "In packages/features/bookings/lib/handleCancelBooking.ts lines 589-596, app resolution and PaymentService instantiation happen outside the try-catch block - if either fails, the error bypasses handleRefundError leaving refund flow incomplete"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "In packages/features/bookings/lib/handleCancelBooking.ts lines 458-470, forEach with async callback causes race condition - handler can reach Promise.all before delete operations start, and line 467 pushes resolved value instead of promise itself breaking promise tracking"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "The calendar property in packages/core/CalendarManager.ts now holds Promise<Calendar | null> but property name doesn't indicate async nature - may confuse consumers expecting resolved Calendar object"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "Dynamic imports in packages/app-store/index.ts are still eager - each import() runs when module is evaluated, so importing appStore kicks off every provider load immediately instead of true on-demand loading"
+ }
+]

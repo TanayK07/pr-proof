@@ -1,0 +1,110 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "_truncate_title can return a string longer than max_length because it adds '...' after slicing - should slice to max_length - 3 before appending ellipsis"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Mutual-exclusion validation for age/timestamp uses truthy-based check with self.initial_data.get(...) which treats 0 as falsey - should use key presence check instead"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "events.values() order from nodestore.backend.get_multi() may not align with error_ids order, causing wrong event data to be associated with wrong IDs when zipping"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Missing events (where data is None) are filtered out but corresponding error_ids are still zipped, causing misalignment"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Broad exception catch (Exception) may hide underlying issues - should catch more specific exceptions like NodeStoreError, KeyError"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Typo in comment: 'segements' should be 'segments'"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "TriggerLabelWrap renders a span while Flex renders a div - nesting div inside span can break inline layout/ellipsis behavior"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "When useApiQuery is disabled or idle, data can be undefined, so data.summary will throw and break the page for orgs without the feature flag"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "Feature-flag path passes empty columns and empty tableData to TableWidgetVisualization, causing blank tables even when results exist"
+ },
+ {
+  "id": 9,
+  "path": null,
+  "line": null,
+  "issue": "Custom renderers that return falsy React nodes (0, '', false, null) are treated as 'no render' due to truthy check - should use explicit undefined check"
+ },
+ {
+  "id": 10,
+  "path": null,
+  "line": null,
+  "issue": "Meta is missing the 'id' column - rows include 'id' but meta.fields/meta.units don't list it, leading to undefined metadata lookups"
+ },
+ {
+  "id": 11,
+  "path": null,
+  "line": null,
+  "issue": "Typo in story text: duplicated 'the' in 'Below is the the most basic example'"
+ },
+ {
+  "id": 12,
+  "path": null,
+  "line": null,
+  "issue": "UseGetTraceItemAttributeValuesProps extends UseTraceItemAttributeBaseProps which provides projects?: Project[], but hook uses projectIds?: PageFilters['projects'] (number[]) - incompatible types"
+ },
+ {
+  "id": 13,
+  "path": null,
+  "line": null,
+  "issue": "useGetTraceItemAttributeValues call defaults to page filters instead of using provided projectIds prop, returning results from wrong project scope"
+ },
+ {
+  "id": 14,
+  "path": null,
+  "line": null,
+  "issue": "requests.post call lacks a timeout, which could cause tests to hang indefinitely if Snuba is unresponsive"
+ },
+ {
+  "id": 15,
+  "path": null,
+  "line": null,
+  "issue": "HIDDEN_ATTRIBUTES filter is only applied when searchQuery is present - when searchQuery is empty, hidden attributes like is_segment, project_id, received will still be visible"
+ },
+ {
+  "id": 16,
+  "path": null,
+  "line": null,
+  "issue": "Analytics event is recorded before feature flag check, meaning analytics will be recorded for all requests including those that return 404 due to feature being disabled"
+ },
+ {
+  "id": 17,
+  "path": null,
+  "line": null,
+  "issue": "request.user.id may raise an error if the user is anonymous when recording analytics"
+ }
+]

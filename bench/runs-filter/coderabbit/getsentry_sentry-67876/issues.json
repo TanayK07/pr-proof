@@ -1,0 +1,20 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Guard against missing sender metadata before dereference - if sender is absent (e.g., legacy integrations), this raises a KeyError and yields a 500; should treat it as invalid instead"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Test uses mismatched state which triggers state check failure instead of exercising the installation-not-found 404 path as intended"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Broad exception catch when parsing OAuth token response can mask unexpected failures - catching Exception is too general, and parse_qsl() with default parameters won't raise ValueError as expected"
+ }
+]

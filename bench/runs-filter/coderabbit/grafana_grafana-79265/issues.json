@@ -1,0 +1,44 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "GrafanaBootConfig class property anonymousDeviceLimit lacks explicit type annotation, causing TypeScript to infer narrower type 'undefined' instead of 'number | undefined' required by GrafanaConfig interface"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Race condition between CountDevices check and device creation/update in CreateOrUpdateDevice allows concurrent requests to exceed the device limit"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "updateDevice returning ErrDeviceLimitReached when rowsAffected == 0 is semantically incorrect - zero rows affected could mean the device doesn't exist within the time window, not that the limit was reached"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Duplicate constant anonymousDeviceExpiration defined in both database.go and api/api.go risks drift if one is updated without the other"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Potential time skew in limit check - CountDevices uses time.Now().UTC() while subsequent upsert operations use device.UpdatedAt, which may differ significantly"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Test for device limit doesn't verify that existing devices can still be updated when limit is reached"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "Missing CreatedAt field in test device struct may cause issues with DB constraints or default value handling"
+ }
+]

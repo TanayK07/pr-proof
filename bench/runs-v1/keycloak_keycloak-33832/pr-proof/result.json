@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "keycloak_keycloak-33832",
+ "seconds": 374,
+ "stderr": "",
+ "cost_usd": 1.5675417999999992,
+ "is_error": false,
+ "num_turns": 20,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR review summary (draft mode): 3 comments kept, 1 dropped in validation\n\nNothing was posted and GitHub was not called. The repository is unchanged.\n\nOverall the PR looks sound. I found no correctness bugs. The new ASN.1 encoder/decoder produced DER signatures identical to the JDK's on P-256, P-384 and P-521 across 900 test signatures, and every one verified. All three findings that survived are LOW severity.\n\n### HIGH severity (0)\n\n### MEDIUM severity (0)\n\n### LOW severity (3)\n- **Dead code in `concatenatedRSToASN1DER`** (`AuthzClientCryptoProvider.java:114`): lines 114\u2013115 build two encoders and throw them away. Lines 119\u2013120 redo the same work. Delete the two lines. (VALID)\n- **The test barely covers the new ASN.1 code** (`ECDSAAlgorithmTest.java:42`):\n  - One default EC key, which is P-256 on JDK 17, is used for ES256, ES384 and ES512.\n  - `Signature.verify` is never called.\n  - So the P-384/P-521 sizes and the long length encoding that P-521 signatures need are never tested.\n  - Fix: one key per curve (`secp256r1`/`secp384r1`/`secp521r1`) plus a verify check.\n  - (PARTIALLY_VALID) I dropped my example of a truncated signature slipping through, because it can't happen on JDK 17.\n- **Make `order()` a default method** (`CryptoProvider.java:44`): as an abstract method it forces any `CryptoProvider` outside this repo to add `order()` before it compiles. `default int order() { return 0; }` avoids that for free. (PARTIALLY_VALID) I dropped my claim that old compiled providers would crash at startup: that code path is never reached. I also removed some JDK examples I had cited that were wrong.\n\n### Dropped in validation (1)\n- **\"All three server providers have order 200, so removing the 'multiple providers' error lets jar order silently pick the FIPS or non-FIPS provider\"** \u2014 INVALID. The Quarkus server, which does ship both jars, sets its provider explicitly and never uses auto-detection. The admin CLI keeps only one set of jars, and the FIPS test profile excludes the other. No setup in this repo has two order-200 providers.\n\nFiles are in `bench/runs/keycloak_keycloak-33832/pr-proof/`:\n- `drafts.json`: the final `{\"kept\": [...], \"dropped\": [...]}`, with each validator's verdict and evidence.\n- `drafts_raw.json`: the four drafts as they were before validation. It includes one correction made before the copy was taken: I fixed a line reference in the `order()` finding.\n\nThere's no PR link because draft mode had no network access."
+}

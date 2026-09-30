@@ -1,0 +1,14 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Guard against null storedIdp before invalidation - if the alias doesn't exist, storedIdp can be null, and invalidation calls will throw NPE. The remove method should return false without NPEs when storedIdp is null"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Cleanup uses the literal string 'alias' instead of the generated alias variable, which won't remove created IDPs and can leak IDPs across tests"
+ }
+]

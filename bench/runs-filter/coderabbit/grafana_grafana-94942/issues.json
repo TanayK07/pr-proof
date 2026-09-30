@@ -1,0 +1,14 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "The enableSqlExpressions function logic is unnecessarily confusing - both branches return false, making the feature flag check dead code. The implementation should be simplified since it always returns false regardless of the feature flag state."
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Docstring coverage is 25.00% which is insufficient - the required threshold is 80.00%. Functions are missing docstrings."
+ }
+]

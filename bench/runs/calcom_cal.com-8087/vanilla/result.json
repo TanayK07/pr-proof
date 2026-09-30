@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "calcom_cal.com-8087",
+ "seconds": 56,
+ "stderr": "",
+ "cost_usd": 0.3011914,
+ "is_error": false,
+ "num_turns": 9,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote 7 review comments to `bench/runs/calcom_cal.com-8087/vanilla/comments.json`; the repository is unchanged. The findings come from reading the diff and its callers; I didn't build or run anything.\n\n1. **The imports aren't actually lazy** (`packages/app-store/index.ts`): the object literal calls every `import()` as soon as the app store is first imported, so every app package still loads. The PR doesn't deliver what its title promises. Also, if any one app module fails to load, the result is an unhandled rejection at startup, even if that app is never used. The fix is to store loader functions (`() => import(...)`) and call them where an app is needed.\n2. **Deletions nobody waits for** (`vital/lib/reschedule.ts`, `wipemycalother/lib/reschedule.ts`, `trpc/.../viewer/bookings.tsx`): these loops now use `forEach(async ...)`, and nothing waits for the calendar and video deletions to finish. The surrounding `try/catch` can't catch their errors, so failures become unhandled rejections. On serverless hosting the deletions can also be cut off after the response is sent, leaving the old calendar events in place.\n3. **Recurring-event deletions can be lost** (`handleCancelBooking.ts:460`): the `forEach(async ...)` here existed before this PR, but the PR converted the `else` branch below it to `for...of` and left this one. Its deletions are never waited for either.\n4. **Changed return type** (`CalendarManager.ts:28`, `getCalendarCredentials`): each item's `calendar` is now a promise that is started immediately but only awaited later. This quietly changes the public return type, and a rejection that no caller awaits goes unhandled.\n5. **Minor: slower loading later** (`videoClient.ts:24`): the loop loads each app one after another. That's harmless while the imports are eager, but it would load serially once finding 1 is fixed."
+}

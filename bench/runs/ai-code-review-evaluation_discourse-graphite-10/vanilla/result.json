@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "ai-code-review-evaluation_discourse-graphite-10",
+ "seconds": 68,
+ "stderr": "",
+ "cost_usd": 0.3066768,
+ "is_error": false,
+ "num_turns": 7,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote 14 review comments to `comments.json`; the file is valid JSON and I didn't change the repository. The most serious problems are in the migration and in how allowed hosts are matched.\n\n**Migration (`db/migrate/20150818190757_create_embeddable_hosts.rb`)**\n- **Crashes on most installs:** the settings table only has a row for a setting someone changed. If `embed_category` was never set, the lookup comes back empty and `nil['id']` raises. The fallback lookup of `uncategorized_category_id` has the same problem.\n- **Hosts inserted unsafely:** host values go into the SQL with no quoting, so a value containing `'` breaks the migration.\n- **Existing embeds stop working:** stored values aren't cleaned up. Entries saved as `http://discourse.org`, or with stray `\\r` characters, will never match again after the upgrade.\n- **No way back:** the old settings are deleted with no rollback path.\n\n**Host matching (`app/models/embeddable_host.rb`)**\n- The query lowercases the stored host but not the incoming one, so any mixed-case referer is rejected.\n- Hosts saved with a port can never match, because the incoming host is compared without its port.\n- The format check rejects domain endings longer than 5 letters and `localhost`, which the old setting accepted.\n- Saving with no host value crashes (500 error) instead of showing a validation error.\n\n**Admin controller (`app/controllers/admin/embeddable_hosts_controller.rb`)**\n- Updating or deleting an unknown id crashes with a 500 instead of returning a 404.\n- A request missing the `embeddable_host` parameter also crashes.\n- `category_id` is never checked against existing categories, so any number is accepted.\n\n**Behavior change (`app/models/topic_embed.rb`)**\n- Topics imported from the feed for a host with no matching record now get no category. Previously the `embed_category` setting applied to all of them.\n\n**Frontend**\n- The underscore-to-dash fix in `rest.js.es6` only replaces the first underscore.\n- The new `*_ids` handling in `store.js.es6` runs on every model. It throws if the value is null and can leave arrays of `undefined`.\n- Deleting a host in the admin screen doesn't catch errors, so failures are silent.\n- After saving with no category chosen, the row shows no category badge until the page is reloaded.\n\n**Tests**\n- The contents of the two fabricator files are swapped: the category file defines the host fabricator and vice versa. It works, but it's confusing."
+}

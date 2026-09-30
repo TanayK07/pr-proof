@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "grafana_grafana-90939",
+ "seconds": 136,
+ "stderr": "",
+ "cost_usd": 0.5987235999999999,
+ "is_error": false,
+ "num_turns": 10,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR Review Summary (draft mode, nothing posted): 2 comments kept, 0 dropped\n\nThe fix is correct. `entryPointAssetsCache` is now read under `RLock` and written under `Lock` (`pkg/api/webassets/webassets.go:41-69`). None of the three callers changes the shared pointer they get back, so returning it from the cache is safe.\n\nThe two-dot diff against `3ce1a5b0` touches 142 files, but the one PR commit (`b1613e32`) and the description cover only `pkg/api/webassets/webassets.go`. The other files look like differences between that base and the branch's parent, not the author's work, so I only reviewed the webassets change. If those files really are part of the PR, they haven't been reviewed.\n\n### HIGH severity (0)\nNone.\n\n### MEDIUM severity (0)\nNone.\n\n### LOW severity (2)\n- **Missing re-check after taking the write lock** (`webassets.go:49`, validator: partially valid). Requests that arrive together on a cold start each wait for the lock, then read and parse `assets-manifest.json` again, one after another. The fix is to check the cache again right after `Lock()`, keeping the Dev-mode bypass.\n  - The validator rejected my first version's claim that a failing manifest serializes every request. A failed load stores nil, so a re-check wouldn't save those reads, and a missing file fails immediately. I rewrote the comment around the startup cost only.\n- **No test for the race** (`webassets.go:37`, validator: valid). No test calls `GetWebAssets` from more than one goroutine, so `go test -race` wouldn't notice if the race came back. The comment includes a concurrent test to add.\n\n### Dropped in validation (0)\nNone.\n\nThere's no PR link because draft mode had no GitHub access.\n\nFiles are in `bench/runs/grafana_grafana-90939/pr-proof/`:\n- `drafts_raw.json`\n- `drafts.json`"
+}

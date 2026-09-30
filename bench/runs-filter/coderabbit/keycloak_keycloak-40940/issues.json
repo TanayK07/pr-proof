@@ -1,0 +1,8 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Missing thread join causes potential test flakiness - the reader thread is never joined before asserting on caughtExceptions, creating a race condition where the reader thread might still be mid-iteration catching an exception and adding it to caughtExceptions after the assertion completes, which could cause intermittent test failures or false passes"
+ }
+]

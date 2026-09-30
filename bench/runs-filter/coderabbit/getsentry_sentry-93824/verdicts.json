@@ -1,0 +1,8 @@
+[
+  {
+    "id": 0,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "src/sentry/spans/consumers/process/flusher.py:127-132 defines _create_process_for_shard(shard), which was added in this PR (the base only had _create_process). grep across src/ and tests/ finds no callers; the only reference is its own definition. The restart path in _ensure_processes_alive (flusher.py:259) and _create_processes (flusher.py:84) both call _create_process_for_shards(process_index, shards) directly. The method is dead code that only does a linear lookup and then delegates, so removing it is safe and costs nothing."
+  }
+]

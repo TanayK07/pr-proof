@@ -1,0 +1,50 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Cache key using hash() may cause collisions or inconsistent behavior because Python's hash() for tuples can vary between interpreter sessions (PYTHONHASHSEED) and different project ID combinations could hash to the same value"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Cache invalidation uses same problematic hash pattern and requires the caller to know the exact set of project IDs that were cached, which may be difficult in practice when invalidating due to allowlist changes"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Unused lambda parameter 'args' in SnQLFunction definition for 'upsampled_count' should use underscore '_' to follow file conventions for unused parameters"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Truthiness check 'if client_sample_rate:' may skip valid sample_rate of 0 or 0.0, should use explicit None check 'if client_sample_rate is not None'"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Unused 'organization' parameter in _are_all_projects_error_upsampled function"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Allowlist lookup is O(n) per project, should convert to a set for O(1) lookups"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "Substring check 'event.type:error' in query may have edge cases with negated queries like '!event.type:error' incorrectly returning True, or queries with extra whitespace like 'event.type: error' returning False"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "Repeated transformation logic 'transform_query_columns_for_error_upsampling(query_columns)' in three separate branches could be consolidated"
+ }
+]

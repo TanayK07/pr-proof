@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "calcom_cal.com-11059",
+ "seconds": 241,
+ "stderr": "",
+ "cost_usd": 1.995765,
+ "is_error": false,
+ "num_turns": 16,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Five validators are checking the 9 drafts in parallel. I'll wait for them all to finish."
+}

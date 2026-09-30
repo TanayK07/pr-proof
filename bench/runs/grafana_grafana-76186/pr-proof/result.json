@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "grafana_grafana-76186",
+ "seconds": 132,
+ "stderr": "",
+ "cost_usd": 0.7803394000000001,
+ "is_error": false,
+ "num_turns": 11,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR Review Summary: 2 draft comments, none dropped (draft mode, nothing posted)\n\nI found no real bugs in this PR. The rename is complete, and the new contextual logger middleware adds the same fields in the same position in the chain as the old instrumentation middleware did. I checked the likely problem spots and they hold up:\n- **`traceID`:** it still reaches the \"Plugin Request Completed\" log line, now through the contextual provider registered at `pkg/infra/tracing/tracing.go:91`.\n- **Wrapper fallback:** in `grafanaInfraLogWrapper.FromContext`, the type check always succeeds, because `ConcreteLogger.FromContext` always returns a `*ConcreteLogger`. So the `d.New()` fallback never runs.\n- **Other implementations:** no other type implements `plog.Logger`, so adding `FromContext` to the interface breaks nothing.\n\nI couldn't compile or run tests because there's no Go toolchain in this environment.\n\n### LOW severity (2)\n- **`pkg/plugins/log/fake.go:47`:** `TestLogger.FromContext` returns a new `NewTestLogger()` instead of the logger it was called on. `LoggerMiddleware` now logs only through `FromContext`, so any future test using this fake would see zero log calls. The fix is `return f`.\n- **`contextual_logger_middleware.go:27`:** there are no tests for `ContextualLoggerMiddleware` or `LoggerMiddleware`. The `pluginId`, `endpoint`, `dsName`, `dsUID` and `uname` fields were removed from the log line itself. They now appear only because the middlewares are listed in a particular order in `pluginsintegration.go:158-161`, and no test or comment keeps that order. The comment recommends a test that uses the existing `clienttest` helper, plus an ordering comment.\n\n  The test code in this comment's recommendation is only a sketch: its `require.NotNil` check doesn't actually prove the fields are there, so tighten it before posting.\n\n### Dropped in validation (0)\nAn independent validator marked both drafts VALID, with file:line evidence.\n\nFiles:\n- **`drafts_raw.json`:** the drafts as written, before validation.\n- **`drafts.json`:** `{\"kept\": [2 entries], \"dropped\": []}`, with each entry's verdict and evidence.\n\nBoth are in `bench/runs/grafana_grafana-76186/pr-proof/`. The repository was not modified."
+}

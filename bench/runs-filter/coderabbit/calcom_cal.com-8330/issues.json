@@ -1,0 +1,32 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Line 114 compares Dayjs objects with === which always returns false - should use .isSame() for Dayjs comparison"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Lines 102-140: .find() returns on first override that doesn't contain the slot, causing false rejection even if another override on the same day does - should use .filter() to collect all overrides for the day, then .some() to check if any contain the slot"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Line 147 uses slotStartTime for both start and end instead of slotEndTime, ignoring event length in working hours boundary check"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Lines 139-144: End time boundary not checked correctly for working hours - end is computed from slotStartTime instead of slotEndTime, allowing slots that extend past workingHour.endTime to be marked as available"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Line 212 uses override.timeZone which is optional - if undefined, dayjs may default to local TZ and mis-shift overrides. Should add fallback and avoid toString() parsing"
+ }
+]

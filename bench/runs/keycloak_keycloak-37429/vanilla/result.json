@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "keycloak_keycloak-37429",
+ "seconds": 98,
+ "stderr": "",
+ "cost_usd": 0.49007,
+ "is_error": false,
+ "num_turns": 8,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote 12 review comments to `bench/runs/keycloak_keycloak-37429/vanilla/comments.json`; the file parses as valid JSON. I didn't build the verifier or run its tests, and I didn't touch the repository.\n\n**Blocking problems:**\n- **Lithuanian now shows Italian text:** `totpStep1` (account theme, `messages_lt.properties:101`) and `loginTotpStep1` (login theme, `messages_lt.properties:71`) were replaced with \"Installa una delle seguenti applicazioni sul tuo cellulare:\".\n- **Simplified Chinese now shows Traditional Chinese:** `totpStep1` in the account `messages_zh_CN.properties` has the Traditional Chinese text, which looks like it came from `zh_TW`.\n- **Placeholders will likely break in the account and admin UIs:** in their `messages_en.properties`, `error-invalid-multivalued-size` switched from `{{0}}` to Java-style `{0}` plus a `{2,choice,...}` pattern. Both UIs render messages with i18next, which only fills in `{{...}}` placeholders, so users would likely see the raw `{0}` and choice text. All the community translations of that key still use `{{0}}`. I didn't check whether the server formats this particular message before it reaches the UI.\n- **The verifier can crash instead of reporting a problem:** it builds a snippet showing where the value and the sanitized value differ. It scans for a shared start and a shared end separately, and these can overlap. For example, `x<b>` vs `x<b></b>` leads to `substring(4, 1)`, which throws an exception.\n\n**Other issues with the verifier:**\n- It finds the English file by string-replacing the absolute path, which is fragile. If there's no `_en` file (e.g. a custom theme with only translations), it throws an unchecked exception and aborts the build.\n- It throws `RuntimeException` rather than `MojoExecutionException`, so Maven reports a plugin crash rather than a normal build error. It also reads each file twice.\n- The \"Didn't find anchor tag\" message doesn't say which key or file failed. The same entry is then reported a second time as \"Illegal HTML\".\n- A link (`<a>`) in the English text counts as HTML, so translations may also use `<p>`, `<b>`, `<strong>` and `<br>` even when the English has none of them.\n- The email-only exception is triggered by any path containing \"email\", including parent directories, so it also applies to other bundles.\n- The sanitizer policies and the regex pattern are named like constants but are rebuilt for every file. They should be `private static final`."
+}

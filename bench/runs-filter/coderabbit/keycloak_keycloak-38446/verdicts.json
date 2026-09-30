@@ -1,0 +1,26 @@
+[
+  {
+    "id": 0,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "server-spi-private/src/main/java/org/keycloak/utils/CredentialHelper.java:125-129: when updateCredential() returns true (user storage accepted the codes), only a debug log is written. The local-cleanup path in RecoveryAuthnCodesCredentialProvider.createCredential (lines 39-40: delete existing stored recovery-codes credential) is skipped, so any earlier local recovery-authn-codes credential stays in the DB. This is more than stale data. UserCredentialManager.isValid (lines 66-77) runs the federated validator first and then every local CredentialInputValidator on inputs that are still unvalidated. So RecoveryAuthnCodesCredentialProvider.isValid (lines 99-111) keeps accepting the old local codes after the user regenerated codes in user storage. Fix: delete the local recovery-codes credential on the user-storage path."
+  },
+  {
+    "id": 1,
+    "verdict": "PARTIALLY_VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "services/src/main/java/org/keycloak/forms/login/freemarker/model/RecoveryAuthnCodeInputLoginBean.java:19,21: both unchecked .get() calls were already there before the PR (the old code was getStoredCredentialsByTypeStream(...).findFirst().get() and getNextRecoveryAuthnCode().get()). The bean is only built when rendering the recovery-code form (FreeMarkerLoginFormsProvider.java:272), and that form only appears when configuredFor() is true (RecoveryAuthnCodesFormAuthenticator.java:148-149). The PR does add a new way for the first Optional to be empty: RecoveryAuthnCodesUtils.getCredential reads getFederatedCredentialsStream, and CredentialInputUpdater.getCredentials defaults to Stream.empty() (CredentialInputUpdater.java:50-52). A storage provider that reports isConfiguredFor(recovery-authn-codes)=true but does not override getCredentials would therefore throw NoSuchElementException. The concern is real for that edge case, but the reviewer overstates it as a general risk."
+  },
+  {
+    "id": 2,
+    "verdict": "PARTIALLY_VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "testsuite/.../federation/BackwardsCompatibilityUserStorage.java:195-200 stores the raw codes JSON with a generated id. getCredentials (lines 237-241) rebuilds the model with RecoveryAuthnCodesCredentialModel.createFromValues, which creates a new model with no id and numbers the codes i+1 (RecoveryAuthnCodesCredentialModel.java:65-67). So the id is lost, and the authenticator's removeStoredCredentialById(recoveryCodeCredentialModel.getId()) (RecoveryAuthnCodesFormAuthenticator.java:84-86) would get null. In practice neither effect happens today: the provider never consumes codes (see issue 3), so allCodesUsed() is never true and the next code is always #1, which the provider accepts. The 'wrong code number' claim is therefore theoretical, and removeStoredCredentialById only targets local storage anyway. This is a test-only provider, so fixing it is optional."
+  },
+  {
+    "id": 3,
+    "verdict": "VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "testsuite/.../federation/BackwardsCompatibilityUserStorage.java:340 returns generatedKeys.stream().anyMatch(...) and never removes the used code or writes back myUser.recoveryCodes. Any code, in any order, can be reused indefinitely. The local provider does the opposite: it checks only the next code and then removes it and persists the change (RecoveryAuthnCodesCredentialProvider.java:106-111). As a result the federated path can never reach the allCodesUsed()/exhausted-cleanup branch in RecoveryAuthnCodesFormAuthenticator.java:84-89. The claim is correct, but this is a testsuite reference provider rather than production code, so it only limits test coverage of code consumption and exhaustion. Worth fixing so the tests exercise one-time-use semantics."
+  }
+]

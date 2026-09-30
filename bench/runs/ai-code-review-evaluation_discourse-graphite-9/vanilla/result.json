@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "ai-code-review-evaluation_discourse-graphite-9",
+ "seconds": 49,
+ "stderr": "",
+ "cost_usd": 0.1823222,
+ "is_error": false,
+ "num_turns": 4,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I wrote six review comments to `comments.json` and did not modify the repository. The review is from reading the diff and the surrounding code; I didn't run anything.\n\nThe two most serious problems:\n\n1. **Stale or cross-site cached translations** (`config/initializers/i18n.rb:17`). The fallback chain now depends on `SiteSetting.default_locale`. But the translation cache in `translate_accelerator.rb` is keyed only on the key, the current locale and the backend object id. On a multisite server, a fallback value cached for one site can be served to another site with a different default locale. A cached value also survives a change to the default locale.\n\n2. **Fallbacks only work in web requests** (`app/controllers/application_controller.rb:159`). The fallback locales are loaded only inside the controller's `set_locale` hook. Background jobs, mailers and rake tasks call `I18n.t` directly, which only loads the current locale. There, missing keys come back as \"translation missing\" instead of falling back to the site locale or English.\n\nThe other four comments:\n\n- **Explicit `locale:` calls aren't covered** (`lib/freedom_patches/translate_accelerator.rb:67`). `translate` only loads `config.locale`. Calls like `I18n.t(key, locale: user.effective_locale)` never load that locale or its fallbacks, so the lookup quietly fails.\n- **Site setting read on a hot path** (`config/initializers/i18n.rb:17`). `SiteSetting.default_locale` is read on every missed lookup, and calls with arguments skip the cache entirely. It can also raise if something translates during boot, before site settings exist.\n- **Fallbacks now on in every environment** (`config/initializers/i18n.rb:9`). They used to be on only in production and profile. In test and development, missing keys will now silently show English, which hides missing-translation bugs in specs.\n- **`FallbackLocaleList` subclasses `Hash` but only overrides `[]`** (`config/initializers/i18n.rb:12`). Methods like `fetch`, `key?` and `each` behave like an empty hash. Code or gems expecting the standard `I18n::Locale::Fallbacks` type will get surprising results."
+}

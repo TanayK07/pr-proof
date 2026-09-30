@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "ai-code-review-evaluation_keycloak-greptile-1",
+ "seconds": 50,
+ "stderr": "",
+ "cost_usd": 0.215095,
+ "is_error": false,
+ "num_turns": 6,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I found three problems in this PR and wrote them to `comments.json`. I didn't compile or run anything.\n\n1. **Passkeys stop working on normal login** (`UsernamePasswordForm.java:161`): the new `isConditionalPasskeysEnabled` check has its condition backwards. It requires `user != null`, so the passkey setup (`fillContextForm`) only happens during re-authentication. On a first login there is no user yet, so the form gets no passkey data at all. The old code did this setup exactly when no user was selected.\n2. **Compile error** (`UsernameForm.java:47`): it calls `isConditionalPasskeysEnabled()` with no arguments, but the only version of that method takes a user. Even once that's fixed, the form would always be shown on re-authentication when passkeys are enabled, even if the user has no passkey registered.\n3. **Missing `@Override`, and the browser offers other users' passkeys** (`WebAuthnConditionalUIAuthenticator.java:65`): the new `shouldShowWebAuthnAuthenticators` override has no `@Override` annotation. It also always returns false, so during re-authentication the browser offers every passkey saved for the site, not just the current user's. Picking someone else's passkey is still rejected when the form is submitted, so this is a usability issue rather than a security hole."
+}

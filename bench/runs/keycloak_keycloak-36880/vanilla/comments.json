@@ -1,0 +1,27 @@
+[
+  {
+    "path": "services/src/main/java/org/keycloak/services/resources/admin/permissions/ClientPermissionsV2.java",
+    "line": 138,
+    "body": "`getClientsWithPermission` looks for resources of type `Clients`, but per-client resources created by `AdminPermissionsSchema.getOrCreateResource` are created without a type. Only the 'all clients' resource created in `init` has `type=Clients`, and its name is the literal string \"Clients\". So this method never returns individual clients that were granted the scope. If the all-clients permission is granted, it returns `{\"Clients\"}`, which callers treat as a client id. For example, `AvailableRoleMappingResource.getRoleIdsWithPermissions` calls `realm.getClientById(cid).getRolesStream()` and gets an NPE. Iterate the per-client resources, whose name is the client id, and handle the type-level resource separately (for example, expand it to all clients)."
+  },
+  {
+    "path": "services/src/main/java/org/keycloak/services/resources/admin/permissions/ClientPermissionsV2.java",
+    "line": 219,
+    "body": "`getResourceTypeResource(..., CLIENTS_RESOURCE_TYPE)` can return null here. That happens when the schema isn't supported for the server, and also for any realm whose admin-permissions client was initialized before this change: `init` only created the `Users` resource and its scopes, so there is no `Clients` resource and no `configure`/`map-roles-client-scope`/`map-roles-composite` scopes. `findByResource(server, null)` then throws an NPE, or later `resource.getScopes()` does. The whole client admin API would fail for those realms. Add a null check (return false), and consider migrating existing admin-permission resource servers so they get the new resource and scopes. `getOrCreateResource` would otherwise throw \"No scopes found.\" for the new scopes."
+  },
+  {
+    "path": "services/src/main/java/org/keycloak/services/resources/admin/permissions/ClientPermissionsV2.java",
+    "line": 148,
+    "body": "Before this PR, `MgmtPermissionsV2.clients()` returned the V1 `ClientPermissions`, so `canExchangeTo` worked with FGAP v2 enabled. Now it throws `UnsupportedOperationException`. `TOKEN_EXCHANGE` (v1) has no dependency on FGAP v1, so it can be enabled together with `ADMIN_FINE_GRAINED_AUTHZ_V2`. In that case `AbstractTokenExchangeProvider` (the `clients().canExchangeTo(client, targetClient, token)` call) fails with a 500 on every exchange to a different audience instead of returning 403. Either return false/deny here or keep delegating to a supported implementation. The unused `getEvaluationContext` helper suggests this was meant to be implemented."
+  },
+  {
+    "path": "services/src/main/java/org/keycloak/services/resources/admin/permissions/ClientPermissionsV2.java",
+    "line": 87,
+    "body": "`canView()` only checks the `view` scope, so an admin granted only `manage` on all clients gets `canManage() == true` but `canView() == false`. Anything guarded by `requireView()`/`canViewClientScopes()`/`requireListClientScopes()` is then forbidden to a user who can manage every client. This also doesn't match `canView(ClientScopeModel)` (line 121), which accepts VIEW or MANAGE, and `UserPermissionsV2.canView`, which accepts both. Use `hasPermission(VIEW) || hasPermission(MANAGE)` here too."
+  },
+  {
+    "path": "services/src/main/java/org/keycloak/services/resources/admin/permissions/AdminPermissions.java",
+    "line": 77,
+    "body": "Gating the listener on `ADMIN_FINE_GRAINED_AUTHZ` avoids the new `UnsupportedOperationException` from `ClientPermissionsV2.setPermissionsEnabled`, but with v2 enabled nothing cleans up anymore. When a client is deleted, its per-client resource (named by the client id) and any permissions referencing it stay in the realm's admin-permissions client, leaving dangling resources/policies. Role and group removal no longer run cleanup under v2 either, although they used to. Add V2 cleanup of the client's resource in `ClientRemovedEvent` instead of skipping it entirely."
+  }
+]

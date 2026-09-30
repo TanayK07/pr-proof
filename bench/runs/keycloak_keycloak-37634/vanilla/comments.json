@@ -1,0 +1,42 @@
+[
+  {
+    "path": "services/src/main/java/org/keycloak/protocol/oidc/encode/AccessTokenContext.java",
+    "line": 73,
+    "body": "Copy-paste bug: this checks `grantType` a second time, with the message for `rawTokenId`. `rawTokenId` is never null-checked, so a null raw id makes `encodeTokenId` produce `onrtac:null`. It should be `Objects.requireNonNull(rawTokenId, ...)`."
+  },
+  {
+    "path": "server-spi-private/src/main/java/org/keycloak/protocol/oidc/grants/OAuth2GrantTypeFactory.java",
+    "line": 33,
+    "body": "Two problems here:\n1. This adds an abstract method to a public SPI with no default. Every existing custom `OAuth2GrantTypeFactory` in the wild will stop compiling (or fail with `AbstractMethodError` at `postInit`). Consider a `default` implementation.\n2. The javadoc says the shortcut is \"usually like 3-letters\", but `DefaultTokenContextEncoderProvider` hard-codes exactly 2 characters when decoding. A custom grant that follows this javadoc and returns a 3-char shortcut will be encoded fine, e.g. `onrtabc:uuid`. `getTokenContextFromTokenId` will then always throw `Expected length of 6` for those tokens. The javadoc should say exactly 2 characters, and the factory should validate the length (and non-null) at `postInit` and in the lazy refresh path. A `null` shortcut would also NPE inside `ConcurrentHashMap.put` at startup."
+  },
+  {
+    "path": "services/src/main/java/org/keycloak/protocol/oidc/encode/DefaultTokenContextEncoderProviderFactory.java",
+    "line": 74,
+    "body": "Nothing validates the shortcut returned by grant factories: length must be 2, it must be non-null, and it must not collide with the reserved `na`. The duplicate check below uses map sizes, so it only catches collisions indirectly, and a duplicate aborts server startup with an `IllegalStateException`. That is harsh for a third-party grant that happens to reuse e.g. `cc`. The error message should at least name the conflicting grants and shortcut."
+  },
+  {
+    "path": "services/src/main/java/org/keycloak/protocol/oidc/encode/DefaultTokenContextEncoderProvider.java",
+    "line": 111,
+    "body": "Throwing here breaks token issuance for any flow where the `GRANT_TYPE` attribute is set to a value with no registered `OAuth2GrantTypeFactory`. Examples: a grant type disabled via feature flag or provider config, or a custom flow that sets its own value. Before this change, access token creation could not fail for this reason. It would be safer to fall back to `UNKNOWN` (`na`) than to fail the token request with a 500."
+  },
+  {
+    "path": "services/src/main/java/org/keycloak/protocol/oidc/encode/DefaultTokenContextEncoderProvider.java",
+    "line": 54,
+    "body": "`getShouldUseLightweightToken(session)` reads `session.getContext().getClient()`, not the client the token is being issued for. Two consequences:\n1. `initToken` now calls it for every access token, even when there are no protocol mappers. Callers such as `KeycloakIdentity` and `PolicyEvaluationService` create access tokens where the context client may be null, which causes an NPE here, or is a different client (the admin console, which has lightweight tokens enabled). In that case the token is wrongly tagged `lt`.\n2. Since this PR's stated purpose is to reliably detect lightweight tokens, the value should come from `clientSessionContext.getClientSession().getClient()` plus the session attribute."
+  },
+  {
+    "path": "services/src/main/java/org/keycloak/protocol/oidc/TokenManager.java",
+    "line": 1054,
+    "body": "The encoded `jti` now depends on state (grant type, lightweight flag, session type) that is resolved at `initToken` time. The lightweight flag can also be set by the `UseLightweightAccessTokenExecutor` client policy through a session attribute. If that executor runs after `initToken`, for example on a token-response event, the `tt` component will disagree with what mappers actually produced. Please verify the ordering, or compute the context after the policies have run."
+  },
+  {
+    "path": "testsuite/integration-arquillian/tests/base/src/test/java/org/keycloak/testsuite/AssertEvents.java",
+    "line": 483,
+    "body": "This matcher is broken in two ways, so it never checks the grant type:\n1. `substring(3, 5)` takes the wrong characters. For `onrtac` it returns `ta`; the grant shortcut is at `substring(4, 6)`.\n2. The condition is inverted: it returns `false` when the shortcut *matches*.\n\nBecause of the wrong offsets, the comparison is never true, so every well-formed id passes. It should be `if (!items[0].substring(4, 6).equals(expectedGrantShortcut)) return false;`. Also check that `items[0].length() == 6` first to avoid a `StringIndexOutOfBoundsException`."
+  },
+  {
+    "path": "server-spi-private/src/main/java/org/keycloak/protocol/oidc/grants/OAuth2GrantType.java",
+    "line": 102,
+    "body": "The public copy constructor `Context(Context)` was removed from this SPI class. External grant type or token exchange implementations that wrap or copy a `Context` will break. If it has to go, it should be called out as a breaking change. The simpler fix is to keep it and also copy the new `grantType` field."
+  }
+]

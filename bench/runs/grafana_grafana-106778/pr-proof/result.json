@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "grafana_grafana-106778",
+ "seconds": 220,
+ "stderr": "",
+ "cost_usd": 2.1535458,
+ "is_error": false,
+ "num_turns": 21,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Four validators are checking the five drafts; I'll wait for their results."
+}

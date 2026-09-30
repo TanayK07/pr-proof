@@ -1,0 +1,13 @@
+{
+ "arm": "vanilla",
+ "id": "getsentry_sentry-80168",
+ "seconds": 45,
+ "stderr": "",
+ "cost_usd": 0.27012,
+ "is_error": false,
+ "num_turns": 6,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I've written six review comments to `comments.json`. I found these by reading the code and did not run the tests.\n\n1. **Blocker: metric alert detectors will crash.** `MetricAlertDetectorHandler` (`src/sentry/incidents/grouptype.py:11`) now subclasses `StatefulDetectorHandler` with just `pass`, so none of its required abstract methods are implemented. Creating the handler will raise `TypeError`, which crashes `process_detectors`, and every other detector in the same data packet gets skipped too. Before this PR it simply returned no results.\n2. **The duplicate-key check is gone, and nothing replaces it.** The PR removes the logging for duplicate group keys. But `evaluate` keys the dict by `result.group_key` rather than the loop's `group_key`, and other handlers can build the dict however they like. A mismatched or repeated key would now be overwritten without any log.\n3. **The priority conversion can raise.** `PriorityLevel(new_status)` only works while detector priority values match `PriorityLevel` values one-for-one. Conditions come from user-configured data, so an unexpected value would raise `ValueError` and stop processing for the whole packet.\n4. **A test looks wrong.** In `TestEvaluateGroupKeyValue.test_dedupe`, the expected occurrence is built with group key `\"val1\"`, but the call uses `\"group_key\"`. The group key is part of the fingerprint, so the fingerprints differ and I expect this assertion to fail.\n5. **Tests don't check the value passed in.** Several expected occurrences use the value 6 when the real value is 10, 100 or 8. They only pass because the test helper ignores the value, so no test would notice if it were dropped.\n6. **Minor:** the `evaluate` docstring still says it returns a list."
+}

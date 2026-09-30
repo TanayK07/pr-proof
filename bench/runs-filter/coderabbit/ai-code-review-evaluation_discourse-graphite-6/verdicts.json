@@ -1,0 +1,8 @@
+[
+  {
+    "id": 0,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "app/serializers/user_serializer.rb:153 defines `include_website_name` without the trailing `?`. Gemfile.lock:22 pins active_model_serializers 0.8.3, which only consults `include_<attr>?` (and auto-defines it as true for each declared attribute), so this method is dead code and website_name (declared at line 43) is always serialized. Every sibling predicate in the file uses `?` (include_email? line 117, include_card_image_badge_id? line 161, and the generated ones at lines 9, 18, 27). Leak is real: `website` is listed in untrusted_attributes (lines 105-111), whose generated include_website? returns false when scope.restrict_user_fields?(object) (lines 25-32), i.e. TL0 profiles viewed by anonymous users. website_name is not in that list, so it still exposes the host/path of the hidden website (derived from object.user_profile.website, lines 133-150). Fix: add website_name to untrusted_attributes (which yields restrict check + present?), or rename to `include_website_name?` and add the restrict_user_fields? guard — just adding `?` alone would fix the dead method but not the TL0 leak."
+  }
+]

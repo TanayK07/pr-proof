@@ -1,0 +1,67 @@
+[
+  {
+    "path": "src/sentry/replays/endpoints/project_replay_summarize_breadcrumbs.py",
+    "line": 118,
+    "body": "`zip(error_ids, events.values())` assumes `nodestore.backend.get_multi` returns values in the same order and count as `error_ids`, but it doesn't. `get_multi` dedupes the IDs, and when some keys are cached it returns the cached entries first and then the uncached ones fetched from the backend. Missing events may also be left out of the dict. So an error's title/message/timestamp can be attached to the wrong event ID, or entries can shift out of place. Iterate over `events.items()` and map each node_id back to its event_id instead, e.g. build `{Event.generate_node_id(project_id, eid): eid for eid in error_ids}` and look up by key."
+  },
+  {
+    "path": "src/sentry/replays/endpoints/project_replay_summarize_breadcrumbs.py",
+    "line": 153,
+    "body": "Timestamp unit mismatch: the error's `timestamp` comes from nodestore event data, which is in seconds (float epoch), but rrweb replay events use milliseconds. Every error timestamp (~1.7e9) is smaller than every replay event timestamp (~1.7e12), so all errors are emitted before the first breadcrumb. The chronological interleaving never works. Convert one side, e.g. multiply the error timestamp by 1000. Also, the `generate_error_log_message` output prints the raw seconds value, which doesn't match the timestamps used in the breadcrumb logs."
+  },
+  {
+    "path": "src/sentry/replays/endpoints/project_replay_summarize_breadcrumbs.py",
+    "line": 81,
+    "body": "`process_raw_response` is called with the request's `field` query params. If a caller passes any `field` values that don't include `error_ids`, the column gets dropped and error context is silently lost. This lookup only needs `error_ids`, so pass a fixed field list here instead of the client-supplied one. Also, `get_filter_params` defaults to a limited stats period, so replays older than that window won't return a row and will have no error context."
+  },
+  {
+    "path": "src/sentry/replays/endpoints/project_replay_summarize_breadcrumbs.py",
+    "line": 115,
+    "body": "Node data in nodestore usually has no top-level `title` key; the title is derived from metadata/culprit. This will often produce empty titles, giving log lines like `'': message`. Also, `message` is frequently empty for exception events (the text is in `exception.values`). Consider building an `Event` object and using `event.title` / `event.search_message`."
+  },
+  {
+    "path": "src/sentry/issues/endpoints/browser_reporting_collector.py",
+    "line": 109,
+    "body": "With the new validation, one invalid report makes the whole batch return 422, so all valid reports in that POST are dropped as well (they're never counted). Browsers batch reports, and the report types/URLs are browser-controlled (e.g. new types not in `BROWSER_REPORT_TYPES`, or non-http URLs such as `about:blank`/extension URLs that fail `URLField`). A single unexpected report will then discard real data. Consider skipping and logging invalid entries instead of rejecting the batch."
+  },
+  {
+    "path": "src/sentry/issues/endpoints/browser_reporting_collector.py",
+    "line": 50,
+    "body": "The mutual-exclusion checks use truthiness (`self.initial_data.get(\"age\")`), so `age=0` alongside `timestamp` (or `timestamp=0` alongside `age`) passes. Also, a report with neither `age` nor `timestamp` is accepted, although each spec requires one of them. Check with `\"age\" in self.initial_data` / `is not None`, and do the check in `validate()` so it also enforces that exactly one field is present."
+  },
+  {
+    "path": "src/sentry/integrations/source_code_management/commit_context.py",
+    "line": 586,
+    "body": "`get_environment_info` calls `issue.get_recommended_event()` for every issue in the comment. That is a Snuba query (plus a nodestore fetch) per issue, run serially inside the PR-comment task: an N+1 pattern that adds noticeable latency and load for PRs with many issues. The broad `except Exception` also hides real failures, and they are logged only at info level. Consider fetching environments in bulk, e.g. from the group's latest event or a single Snuba query."
+  },
+  {
+    "path": "src/sentry/integrations/source_code_management/commit_context.py",
+    "line": 602,
+    "body": "The issue title is inserted into a markdown link (`[**{title}**]({url})`) without escaping. Titles often contain `]`, `*`, `` ` `` or `[`, for example exception messages. These break the link rendering and can inject markdown into the PR comment. Escape markdown-significant characters before formatting. Truncating to 50 characters can also cut an escape sequence or backtick pair in half."
+  },
+  {
+    "path": "static/app/views/performance/newTraceDetails/traceDrawer/details/span/eapSections/attributes.tsx",
+    "line": 67,
+    "body": "`HIDDEN_ATTRIBUTES` is only applied inside the search-filter branch. When `searchQuery` is empty, the early `return sorted` above still includes `is_segment`, `project_id` and `received`, so they are hidden only while the user is searching. Filter out hidden attributes before the early return."
+  },
+  {
+    "path": "static/app/views/dashboards/widgetCard/chart.tsx",
+    "line": 166,
+    "body": "With `use-table-widget-visualization` enabled, the table widget renders `TableWidgetVisualization` with `columns={[]}` and empty `tableData`. This ignores `result.data`/`result.meta`, the loading state, the field aliases and custom renderers, so every table widget shows up empty for orgs with the flag. Also, because `columns` is `[]` rather than `undefined`, the fallback that derives columns from `meta.fields` is never used. Pass the real data (`result.data`, `result.meta`) and omit `columns`, or keep the flag off until this is wired up."
+  },
+  {
+    "path": "static/app/views/explore/hooks/useTraceItemAttributeKeys.tsx",
+    "line": 50,
+    "body": "Behavior changes introduced by moving from `useApiQuery` to `useQuery`: the old query set `staleTime: 0, refetchOnWindowFocus: false, retry: false`, and the new one uses the defaults, so failed requests are now retried and the query refetches on window focus. The new request also no longer sends `environment: selection.environments`, so attribute keys are no longer scoped by the selected environment. Confirm both are intended."
+  },
+  {
+    "path": "src/sentry/preprod/api/endpoints/organization_preprod_artifact_assemble.py",
+    "line": 81,
+    "body": "The analytics event is recorded before the feature-flag check and before request validation. Requests from orgs without `organizations:preprod-artifact-assemble` (which get a 403) and invalid requests are counted as assemble calls, which inflates the metric. Move the call after the feature check (or after successful validation)."
+  },
+  {
+    "path": "src/sentry/grouping/parameterization.py",
+    "line": 335,
+    "body": "Now that `ParameterizationRegexExperiment` is removed, this `_handle_regex_match` closure inside `parametrize_w_experiments` is dead code. Remove it."
+  }
+]

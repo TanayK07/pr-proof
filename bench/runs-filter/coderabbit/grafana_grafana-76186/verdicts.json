@@ -1,0 +1,8 @@
+[
+  {
+    "id": 0,
+    "verdict": "PARTIALLY_VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "Technically true: contextual_logger_middleware.go:40,45,50,55 read req.PluginContext with no nil check, so a direct call with a nil req would panic. In practice it can't happen in production. pluginsintegration.go:158-160 puts NewTracingMiddleware and NewMetricsMiddleware ahead of NewContextualLoggerMiddleware. Both already dereference req.PluginContext without a guard (tracing_middleware.go:85,93,101,109; metrics_middleware.go QueryData/CallResource/CheckHealth/CollectMetrics), so a nil req would panic before it reached this middleware. The old InstrumentationMiddleware at the base SHA did the same unguarded dereference, so this is not a regression. The nil check in client.go:43,82,129,151 (errNilRequest) only runs after the middleware chain. That said, several sibling middlewares guard with `if req == nil { return m.next... }` (logger_middleware.go:63,77,90,104; clear_auth_headers_middleware.go:42; caching_middleware.go:58; user_header_middleware.go:40). Adding the same guard would be a cheap defensive step that matches codebase convention, but it is not needed to fix a real bug."
+  }
+]

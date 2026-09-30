@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "ai-code-review-evaluation_discourse-graphite-7",
+ "seconds": 123,
+ "stderr": "",
+ "cost_usd": 0.7128562,
+ "is_error": false,
+ "num_turns": 11,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR Review Summary: 5 draft comments kept, 0 dropped in validation (draft mode, nothing posted)\n\nAlmost all of the PR's ~115 replacements follow one rule: a colour that was `scale-color($primary, N%)` becomes `dark-light-choose(scale-color($primary, N%), scale-color($secondary, (100-N)%))`. That leaves light themes looking exactly as before. `dark-light-choose` (`common/foundation/variables.scss:46`) picks its first argument whenever `$primary` is darker than `$secondary`, which is every light theme. Five lines break that rule, so the PR changes how the default light theme looks.\n\n### HIGH severity (0)\n\n### MEDIUM severity (2)\n- **`desktop/topic-post.scss:291`**: the `.topic-meta-data h5 a` username link was 30% and is now 70%/30%. The two values look swapped, so on light themes this bold link goes from dark gray to pale gray. It should be 30%/70%.\n- **`mobile/modal.scss:102`**: the `.custom-message-length` hint text was 70% and is now 30%/70%, so the muted hint turns dark on light themes. The desktop version of the same rule was converted correctly to 70%/30%.\n\n### LOW severity (3)\n- **`mobile/topic-post.scss:182`**: `h3` was 20% and is now 50%/50%, which makes it look the same as `h4`. It should be 20%/80%; the 20% line at 247 in the same file was converted that way.\n- **`desktop/user.scss:522`**: `.group-member-info .name` was 30% and is now 50%/50%. It now matches `.title`, so names no longer stand out from titles. It should be 30%/70%.\n- **`mobile/user.scss:497`**: the same `.name` mistake as on desktop, with the same fix.\n\n### Dropped in validation (0)\nSeparate validator agents checked all five drafts against the diff and the definition of `dark-light-choose`. All came back VALID.\n\nThe dark-theme values in the fixes (80% and 70%) follow the PR's own 100\u2212N convention; they aren't values that existed before the PR.\n\nFiles are in `bench/runs/ai-code-review-evaluation_discourse-graphite-7/pr-proof/`:\n- **`drafts_raw.json`**: the drafts as written, before validation.\n- **`drafts.json`**: `{\"kept\": [5], \"dropped\": []}`, with each validator's verdict and evidence.\n\nThe repository was not modified, and there's no PR link because nothing was posted."
+}

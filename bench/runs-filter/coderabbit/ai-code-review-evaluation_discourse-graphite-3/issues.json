@@ -1,0 +1,56 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Case-sensitive email lookup in BlockedEmail.should_block? creates bypass risk - User@Example.com can bypass a block on user@example.com"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Email.downcase() only lowercases the domain part, not the local part, so using it won't fix the case-sensitivity issue - need to use full downcase instead"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "BlockedEmail model needs email normalization via before_validation callback to downcase emails before storage"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "BlockedEmail.should_block? should use email.downcase when querying to ensure case-insensitive matching"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Regex in email_in_restriction_setting? missing end anchor allows suffix domain bypass - user@example.com.evil.com matches whitelisted example.com domain"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Regex pattern should be changed from @(#{domains}) to @(?:#{domains})\\z to anchor domain matching to end of string"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "Extra blank lines at start/end of describe block in email_validator_spec.rb violate RuboCop Layout/EmptyLinesAroundBlockBody convention"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "Consider using the new user.email.blocked translation key instead of user.email.invalid for blocked email validation messages"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "Potential duplicate entries in rejectedEmails array if user submits same blocked email multiple times"
+ }
+]

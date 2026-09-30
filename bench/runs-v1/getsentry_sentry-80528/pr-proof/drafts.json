@@ -1,0 +1,27 @@
+{
+ "kept": [
+  {
+   "id": 1,
+   "path": "src/sentry/monitors/logic/incident_occurrence.py",
+   "line": 168,
+   "severity": "LOW",
+   "category": "ISSUE",
+   "claim": "get_monitor_environment_context computes a display-form `config` copy and never uses it. This dead code was moved as-is, and tests pin the raw integer schedule_type.",
+   "body": "## [ISSUE] Dead code in get_monitor_environment_context (moved verbatim)\n\n**Severity:** LOW. Unused work plus unclear intent in the newly extracted module. This is not a regression.\n\n### The Problem\n\n```python\nconfig = monitor_environment.monitor.config.copy()\nif \"schedule_type\" in config:\n    config[\"schedule_type\"] = monitor_environment.monitor.get_schedule_type_display()\n\nreturn {\n    ...\n    \"config\": monitor_environment.monitor.config,  # local `config` is never used\n```\n\n### Theory / Proof\n\n`Monitor.get_schedule_type_display()` (`src/sentry/monitors/models.py:343`) returns the readable name, but line 168 returns `monitor.config` directly, so lines 160-162 do nothing. The code is identical to base `mark_failed.py:327-339`, so this PR only moved it. `tests/sentry/monitors/logic/test_mark_failed.py:119` asserts `\"schedule_type\": 2`, which means the raw value is the behaviour the tests currently expect.\n\n### What happens today vs. what will break\n\nNothing breaks today; the event payload carries the raw integer. The risk is confusion: someone extending this new module (the PR says more occurrence work is coming) could reasonably assume the context already holds the display value.\n\n### Recommendation\n\nSince this is a move-only PR, the smallest safe change is to delete the dead lines:\n\n```python\ndef get_monitor_environment_context(monitor_environment: MonitorEnvironment):\n    return {\n        \"id\": str(monitor_environment.monitor.guid),\n        ...\n        \"config\": monitor_environment.monitor.config,\n        ...\n    }\n```\n\nIf the display value is what was intended, do that in a follow-up: return `config` and update `test_mark_failed.py:119` to expect `\"interval\"`.",
+   "verdict": "PARTIALLY_VALID",
+   "evidence": "incident_occurrence.py:160-162 builds `config` as a display-form copy that line 168 never uses. The same code was moved unchanged from base mark_failed.py:327-339. test_mark_failed.py:119 asserts the raw `\"schedule_type\": 2`, so returning `config` would change the payload and break that test. The dead code is real, but this refactor did not introduce it."
+  },
+  {
+   "id": 2,
+   "path": "src/sentry/monitors/logic/incidents.py",
+   "line": 93,
+   "severity": "LOW",
+   "category": "OPTIMIZATION",
+   "claim": "When an incident opens with failure_issue_threshold = N > 1, the loop runs about 3 redundant DB queries per check-in (monitor_environment FK, monitor FK, get_last_successful_checkin). This is pre-existing and happens once per incident.",
+   "body": "## [OPTIMIZATION] Redundant per-check-in queries when an incident opens\n\n**Severity:** LOW. About 3 x N redundant queries once per incident open when `failure_issue_threshold = N > 1`. This is pre-existing and was moved as-is.\n\n### The Problem\n\n```python\ncheckins = MonitorCheckIn.objects.filter(id__in=[c[\"id\"] for c in previous_checkins])\nfor checkin in checkins:\n    create_incident_occurrence(previous_checkins, checkin, incident, received=received)\n```\n\nEach call to `create_incident_occurrence` does the following:\n- `failed_checkin.monitor_environment`: lazy FK query (no `select_related`)\n- `monitor_env.monitor`: another lazy FK query on that fresh instance\n- `monitor_env.get_last_successful_checkin()`: an ordered query (`models.py:707-712`) whose result is the same for every iteration\n\n(`get_environment()` goes through `get_from_cache` (`models.py:698`), so it is not a DB hit.)\n\n### Theory / Proof\n\nEvery check-in here belongs to the `monitor_env` that `try_incident_threshold` already holds, because the query filters on `monitor_environment=monitor_env`. So all three lookups return the same data N times. The ERROR branch always has a single check-in, so the waste only happens on the OK/ACTIVE -> ERROR transition.\n\n### What happens today vs. what will break\n\nToday this costs a few extra queries once per incident on the consumer / clock-task path. It grows linearly with the threshold, and any per-occurrence lookup added to this new module later will multiply the same way.\n\n### Research\n\nDjango docs, \"Database access optimization\": use `select_related` for forward FKs that are read in a loop.\n\n### Recommendation\n\n```python\ncheckins = MonitorCheckIn.objects.select_related(\n    \"monitor_environment__monitor\"\n).filter(id__in=[c[\"id\"] for c in previous_checkins])\n```\n\nAlso consider computing `get_last_successful_checkin()` once in `try_incident_threshold` and passing it into `create_incident_occurrence`.",
+   "verdict": "PARTIALLY_VALID",
+   "evidence": "incidents.py:93 has no select_related. Each iteration does a lazy monitor_environment FK load, a lazy monitor FK load and get_last_successful_checkin (models.py:707-712), all redundant. get_environment uses get_from_cache (models.py:698), so it is not a DB query. The loop has more than one entry only when an incident opens with threshold > 1, and the code is pre-existing (base mark_failed.py:182-189)."
+  }
+ ],
+ "dropped": []
+}

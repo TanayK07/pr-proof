@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "grafana_grafana-90045",
+ "seconds": 212,
+ "stderr": "",
+ "cost_usd": 1.8268558000000004,
+ "is_error": false,
+ "num_turns": 16,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Two of six validators are back and both upheld their drafts. Waiting on the rest."
+}

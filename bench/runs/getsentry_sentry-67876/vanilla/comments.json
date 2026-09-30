@@ -1,0 +1,32 @@
+[
+  {
+    "path": "src/sentry/integrations/github/integration.py",
+    "line": 503,
+    "body": "`integration.metadata[\"sender\"][\"login\"]` will raise KeyError (500) for any Integration whose metadata has no `sender`. `build_integration` only sets `sender` when `state.get(\"sender\")` is present (webhook-created installs), and `installation.py` explicitly handles `\"sender\" not in integration.metadata`, so older integrations and ones created through the regular pipeline have no sender. Use `.get(\"sender\", {}).get(\"login\")` and fail with `error(...)` when it's missing. Also consider comparing the immutable GitHub user `id` instead of `login`, because users can rename their login."
+  },
+  {
+    "path": "src/sentry/integrations/github/integration.py",
+    "line": 481,
+    "body": "The new check that the authenticated user is the user who installed the app only runs when the Integration row already exists. When `Integration.DoesNotExist` (e.g. the installation webhook hasn't arrived yet, which is the normal fresh-install path), we call `next_step()` without verifying anything. An attacker who supplies someone else's `installation_id` before the webhook lands can skip the new protection completely. `build_integration` then fetches installation info by id and attaches it to the attacker's org. Either verify the sender through the GitHub API (e.g. check that the authenticated user can access that installation via `/user/installations`) or fail closed."
+  },
+  {
+    "path": "src/sentry/integrations/github/integration.py",
+    "line": 423,
+    "body": "`safe_urlopen` is outside the try/except, so a network error or timeout while exchanging the code crashes with a 500 instead of showing the `error()` page. Put it inside the try block. Also, if the user denies authorization, GitHub redirects back with `error=access_denied` and no `code`, and we still POST `code=None` to GitHub. Check for a missing `code` first and return `error()` directly."
+  },
+  {
+    "path": "src/sentry/integrations/github/integration.py",
+    "line": 434,
+    "body": "`get_user_info` calls `raise_for_status()`, so an HTTPError (e.g. a revoked token or a GitHub 5xx) escapes as an unhandled 500 instead of the invalid-installation error page. Wrap it and return `error(request, self.active_organization)`."
+  },
+  {
+    "path": "src/sentry/integrations/github/integration.py",
+    "line": 408,
+    "body": "The authorize URL is built with string interpolation, and none of the query parameters are URL-encoded. `redirect_uri` is an absolute URL containing `:`, `/` (and possibly `?`), which should be encoded. Use `urlencode({...})` like `OAuth2LoginView` does."
+  },
+  {
+    "path": "src/sentry/integrations/github/integration.py",
+    "line": 412,
+    "body": "The CSRF `state` is compared with `!=`. Use `constant_time_compare` for secret comparison, as the generic OAuth2 callback does."
+  }
+]

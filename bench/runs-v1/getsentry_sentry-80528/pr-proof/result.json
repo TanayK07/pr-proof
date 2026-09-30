@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "getsentry_sentry-80528",
+ "seconds": 136,
+ "stderr": "",
+ "cost_usd": 0.6071392,
+ "is_error": false,
+ "num_turns": 9,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "## PR review summary: 2 draft comments kept, 0 dropped (draft mode, nothing posted)\n\nThis PR is a clean move with no behaviour change. `mark_failed_threshold` becomes `try_incident_threshold` in `logic/incidents.py`, `create_issue_platform_occurrence` becomes `create_incident_occurrence` in `logic/incident_occurrence.py`, and `SimpleCheckIn` moves to `monitors/types.py`. I found no remaining references to the old names in `src/` or `tests/`. The tests patch `sentry.issues.producer.produce_occurrence_to_kafka`, which is imported lazily inside the function, so those patches still work.\n\nA concurrency concern about the status save followed by `get_or_create` was ruled out before drafting: `MonitorIncident` has a `unique_active_incident` constraint, and Django's `get_or_create` recovers from the resulting IntegrityError.\n\nA validator found both kept findings real but only partly right, so I rewrote them around what held up:\n\n### LOW severity (2)\n- **`incident_occurrence.py:168`**: `get_monitor_environment_context` builds a copy of the config with a readable `schedule_type`, then never uses it. The code was moved unchanged, and `test_mark_failed.py:119` expects the raw `2`. The comment recommends deleting the dead lines, or deliberately switching the payload to the readable value and updating the test.\n- **`incidents.py:93`**: when an incident opens with `failure_issue_threshold = N > 1`, the loop makes about 3 extra database queries per check-in: two lazy foreign-key loads and `get_last_successful_checkin`. The comment recommends `select_related(\"monitor_environment__monitor\")` and looking up the last successful check-in once. My draft overstated the count: `get_environment()` reads from a cache, not the database. This is also old code, not something the PR introduced.\n\n### Dropped in validation (0)\n\nFiles:\n- `drafts_raw.json`: the drafts as written before validation.\n- `drafts.json`: `{\"kept\": [...], \"dropped\": []}`, with each finding's verdict and evidence.\n\nBoth are in `bench/runs/getsentry_sentry-80528/pr-proof/`. The repository was not modified."
+}

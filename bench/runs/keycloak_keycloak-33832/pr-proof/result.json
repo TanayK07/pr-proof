@@ -1,0 +1,13 @@
+{
+ "arm": "pr-proof",
+ "id": "keycloak_keycloak-33832",
+ "seconds": 268,
+ "stderr": "",
+ "cost_usd": 1.6445669999999997,
+ "is_error": false,
+ "num_turns": 21,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Three validators are running on the four drafts; I'll wait for their results."
+}

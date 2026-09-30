@@ -1,0 +1,8 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Call-count expectation in test at line 112 expects 5 calls to datasource.applyTemplateVariables, but runShardSplitQuery only calls applyTemplateVariables once per initial target (this test has one target), so the expectation should be changed to 1"
+ }
+]
