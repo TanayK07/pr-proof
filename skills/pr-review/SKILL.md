@@ -198,16 +198,25 @@ worst person to judge it, so each draft is checked by a fresh subagent that did 
 
 2. **Validator brief** (include verbatim):
 
-   > You are validating one code review comment. Your job is to try to DISPROVE it.
-   > Read the full file and the diff. Trace the actual execution path. Check callers,
-   > types, guards, tests and framework behaviour. Look for anything in the code that
-   > already handles the case. If the claim depends on library/framework behaviour,
-   > confirm it from the source or official docs.
+   > You are validating one code review comment written by another reviewer. Check whether
+   > its claim is true. Read the full file and the diff, trace the actual execution path,
+   > and check callers, types, guards, tests and framework behaviour. Look for anything in
+   > the code that already handles the case. If the claim depends on library/framework
+   > behaviour, confirm it from the source or official docs.
+   > Verdicts:
+   > - VALID: the claim is technically correct and matters for this code.
+   > - PARTIALLY_VALID: there is a real problem, but the comment overstates it or suggests
+   >   the wrong fix. Say which part holds up.
+   > - INVALID: the claim is factually wrong, does not apply here, or rests on a
+   >   misunderstanding of the code. You must point to the code that shows this.
+   > - STYLE_PREFERENCE: neither right nor wrong, only taste.
+   > These are NOT reasons for INVALID: the bug also existed before this PR but the PR
+   > touches or relies on that code; the code looks intentional but nothing documents or
+   > tests that intent; the failing path needs a specific but reachable input or timing.
+   > Do not lower the severity unless you found evidence that the impact is smaller.
    > Return JSON: {"id": <id>, "verdict": "VALID" | "PARTIALLY_VALID" | "INVALID" |
    > "STYLE_PREFERENCE", "evidence": "<file:line references and what they show>",
    > "corrected_claim": "<only for PARTIALLY_VALID: the part that holds up>"}
-   > VALID means the problem is real AND matters. Uncertain is not VALID: if you cannot
-   > point to the code path that goes wrong, say INVALID and explain what is missing.
 
 3. **Apply verdicts:**
    - `VALID` — keep.
@@ -219,8 +228,8 @@ worst person to judge it, so each draft is checked by a fresh subagent that did 
    keeps its draft fields and adds the validator's `verdict` and `evidence`, so the user
    can see why each comment survived or was cut.
 
-Use the `pr-comment-validation` skill's false-positive table and verdict criteria when
-briefing validators. Skip this phase only if the user explicitly asks for an unvalidated review.
+The verdict criteria match the `pr-comment-validation` skill; include its false-positive
+table in the brief so validators recognise common reviewer mistakes. Skip this phase only if the user explicitly asks for an unvalidated review.
 
 ## Phase 7: Post Inline Comments
 
