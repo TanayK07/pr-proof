@@ -1,0 +1,27 @@
+{
+  "name": "pr-proof",
+  "description": "AI PR review skills for Claude Code that fact-check their own comments.",
+  "owner": {
+    "name": "Tanay Kedia",
+    "url": "https://github.com/TanayK07"
+  },
+  "plugins": [
+    {
+      "name": "pr-proof",
+      "source": "./",
+      "description": "AI PR review that fact-checks its own comments. Review a PR, validate every review comment against the code and official docs, then fix only what holds up.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tanay Kedia"
+      },
+      "license": "Apache-2.0",
+      "keywords": [
+        "code-review",
+        "pull-request",
+        "github",
+        "review",
+        "validation"
+      ]
+    }
+  ]
+}
