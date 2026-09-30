@@ -1,10 +1,11 @@
 ---
 name: pr-review
 description: >
-  Deep PR review with inline GitHub comments — gap analysis, issue detection,
-  optimization analysis. Each comment includes theory, proof, research, and
-  concrete recommendations. Use when asked to "review PR", "analyze PR",
-  "comment on PR", "pr review", or "review this pull request".
+  Deep PR review with inline GitHub comments that fact-checks itself: every draft
+  finding is checked by an independent validator before it is posted, and findings
+  that don't hold up are dropped. Covers bugs, gaps and optimizations, each with proof
+  and a concrete fix. Use when asked to "review PR", "analyze PR", "comment on PR",
+  "pr review", "review this pull request", or for a draft/dry-run review.
 ---
 
 # Deep PR Review with Inline GitHub Comments
@@ -18,6 +19,7 @@ No vague observations — every finding must be backed by evidence.
 - User asks to review a PR (by number, URL, or current branch)
 - User says "review", "analyze", "gap analysis", "find issues" about a PR
 - User wants inline comments posted on a GitHub PR
+- User wants a draft review they can read before anything is posted ("draft", "dry run", "don't post")
 
 ## Phase 0: Identify the PR
 
@@ -140,21 +142,24 @@ Focus on meaningful optimizations, not micro-optimizations:
 - **API ergonomics** — is the API harder to use correctly than incorrectly?
   Could a builder pattern, extension function, or default parameter prevent misuse?
 
-## Phase 5: Write Inline Comments
+## Phase 5: Draft Findings
 
-For EACH finding, post an inline GitHub comment using the `gh` API.voi
+Write every finding as a draft first. Nothing gets posted yet.
 
+Keep drafts in a JSON file (default `pr-review-drafts.json` in the repo root, or the path the
+user gave). Each entry:
 
-
-Avoid using emojis
+```json
+{"id": 1, "path": "src/foo.py", "line": 42, "severity": "HIGH", "category": "ISSUE",
+ "claim": "One sentence: what is wrong and what breaks.", "body": "<full comment markdown>"}
+```
 
 ### Comment Quality Requirements
 
-Every comment MUST include ALL of these sections:
+Do not use emojis. Every comment body MUST include ALL of these sections:
 
-1. **Title** — `##[One-line summary]`
+1. **Title** — `## [CATEGORY] One-line summary`
    - Categories: `GAP ANALYSIS`, `ISSUE`, `OPTIMIZATION`, `RACE CONDITION`
-   - Emojis: Use a microscope emoji for all
 
 2. **Severity** — `**Severity:** HIGH | MEDIUM | LOW — [one-line impact]`
 
@@ -165,7 +170,7 @@ Every comment MUST include ALL of these sections:
    - Protocol specs, RFC references, language docs
    - Behaviour of the underlying runtime/library (with source references)
    - Mathematical analysis where relevant (collision probability, complexity)
-   - Comparison with canonical implementations (rclpy, rclcpp, official SDKs)
+   - Comparison with canonical implementations and official SDKs
 
 5. **What happens today vs. what will break** — Explain why the code works now
    (if it does) and the specific scenario that breaks it.
@@ -175,9 +180,54 @@ Every comment MUST include ALL of these sections:
 7. **Recommendation** — Concrete fix with code example. Not "consider doing X" —
    show the actual code change.
 
-### Posting Comments
+### Comment Targeting
 
-Use the GitHub API to post inline comments:
+- Place each comment on the most relevant line — the line where the fix should go
+- For architectural issues that span multiple files, pick the primary file
+- For missing code (gaps), comment on the line closest to where code should be added
+- `line` must exist on the RIGHT (new code) side of the diff
+
+## Phase 6: Prove It (Self-Validation)
+
+This is the step that keeps the review honest. The reviewer who wrote a finding is the
+worst person to judge it, so each draft is checked by a fresh subagent that did not write it.
+
+1. **Dispatch validators in parallel** — one subagent per draft (batch 2-3 small drafts per
+   agent if there are many), all in a single message. Give each only: the repo path, the
+   base ref, the draft's `path`, `line`, `claim`, and `body`. Do not pass your reasoning.
+
+2. **Validator brief** (include verbatim):
+
+   > You are validating one code review comment. Your job is to try to DISPROVE it.
+   > Read the full file and the diff. Trace the actual execution path. Check callers,
+   > types, guards, tests and framework behaviour. Look for anything in the code that
+   > already handles the case. If the claim depends on library/framework behaviour,
+   > confirm it from the source or official docs.
+   > Return JSON: {"id": <id>, "verdict": "VALID" | "PARTIALLY_VALID" | "INVALID" |
+   > "STYLE_PREFERENCE", "evidence": "<file:line references and what they show>",
+   > "corrected_claim": "<only for PARTIALLY_VALID: the part that holds up>"}
+   > VALID means the problem is real AND matters. Uncertain is not VALID: if you cannot
+   > point to the code path that goes wrong, say INVALID and explain what is missing.
+
+3. **Apply verdicts:**
+   - `VALID` — keep.
+   - `PARTIALLY_VALID` — rewrite the comment around `corrected_claim`; drop the overstated part.
+   - `INVALID` or `STYLE_PREFERENCE` — drop it.
+
+4. Wait for every validator to return before writing anything. Then write the result back
+   to the drafts file as `{"kept": [...], "dropped": [...]}`. Every entry in both lists
+   keeps its draft fields and adds the validator's `verdict` and `evidence`, so the user
+   can see why each comment survived or was cut.
+
+Use the `pr-comment-validation` skill's false-positive table and verdict criteria when
+briefing validators. Skip this phase only if the user explicitly asks for an unvalidated review.
+
+## Phase 7: Post Inline Comments
+
+**Draft mode:** if the user asked for a draft, dry run, or "don't post", stop here and show
+the kept comments. Do not call the GitHub API.
+
+Otherwise post each kept comment:
 
 ```bash
 gh api repos/{owner}/{repo}/pulls/{pr_number}/comments \
@@ -192,24 +242,17 @@ BODY
 ```
 
 **Important:**
-- `line` must be a line number that exists in the diff (RIGHT side = new code)
 - `path` is relative to repo root (e.g., `src/main/kotlin/com/example/Foo.kt`)
 - `commit_id` is the full SHA from `git rev-parse HEAD`
 - Use a HEREDOC for the body to handle multi-line markdown with code blocks
 - Post comments in parallel where possible for speed
 
-### Comment Targeting
+## Phase 8: Summary
 
-- Place each comment on the most relevant line — the line where the fix should go
-- For architectural issues that span multiple files, pick the primary file
-- For missing code (gaps), comment on the line closest to where code should be added
-
-## Phase 6: Summary
-
-After posting all inline comments, provide a summary to the user:
+After posting (or drafting), give the user a summary:
 
 ```
-## PR Review Summary: N inline comments posted
+## PR Review Summary: N comments posted (M drafts dropped by validation)
 
 ### HIGH severity (X)
 - [one-line summary per finding]
@@ -219,6 +262,9 @@ After posting all inline comments, provide a summary to the user:
 
 ### LOW severity (Z)
 - [one-line summary per finding]
+
+### Dropped in validation (M)
+- [one-line claim] — [why it did not hold up]
 ```
 
 Include a link to the PR so the user can see all comments.
@@ -230,12 +276,12 @@ Include a link to the PR so the user can see all comments.
 - **DO NOT** flag things that are already handled in the diff (read the full diff first!)
 - **DO NOT** suggest changes that would break existing tests
 - **DO NOT** comment on documentation files unless they contain technical errors
-- **DO NOT** post more than 15 comments — prioritize by severity
+- **DO NOT** draft more than 15 comments — prioritize by severity
 - **DO NOT** post duplicate findings (same issue in multiple places = one comment on the worst instance)
 
 ## Prioritization
 
-If you find more than 15 issues, post only the top 15 by this priority:
+If you find more than 15 issues, draft only the top 15 by this priority:
 
 1. Bugs that will cause crashes or data corruption
 2. Race conditions and resource leaks

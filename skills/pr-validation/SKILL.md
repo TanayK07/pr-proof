@@ -40,7 +40,7 @@ each comment in a natural, human tone.
 |-------|-------------|------------|
 | **0: Setup** | Worktree + PR context | `git worktree`, `gh api` |
 | **1: Fetch** | Comments, diff, threads | `gh api` (REST + GraphQL) |
-| **2: Analyze** | Parallel agents per file-group | Agent, Grep, Read, WebSearch, Context7 |
+| **2: Analyze** | Parallel agents per file-group | Agent, Grep, Read, WebSearch (+ docs MCP if available) |
 | **3: Report** | Actionable verdicts presented | AskUserQuestion |
 | **4: Execute** | Apply fixes + reply to comments | Edit, `gh api` |
 
@@ -199,7 +199,7 @@ For EACH comment, do ALL of the following:
 
 ### 3. Research (if the comment makes a technical claim)
 - Use WebSearch for authoritative sources (official docs, specs, RFCs, OWASP)
-- Use Context7 MCP to check framework/library documentation
+- If a docs tool such as the Context7 MCP server is available, use it to check framework/library documentation
 - "Best practice" without a source is opinion, not evidence
 
 ### 4. Validate the Claim
