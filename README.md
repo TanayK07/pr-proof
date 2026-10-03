@@ -1,5 +1,10 @@
 # pr-proof
 
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-d97757.svg)](https://code.claude.com)
+[![Benchmark: Code Review Bench](https://img.shields.io/badge/benchmark-Code%20Review%20Bench-3fb950.svg)](bench/)
+[![Demo video](https://img.shields.io/badge/demo-video-black.svg)](https://x.com/tanaykedia_7/status/2106061332357529939)
+
 **Make AI code review less noisy. Every review comment has to prove itself before you see it.**
 
 AI review bots comment on everything they notice, and a lot of it is wrong. pr-proof is three Claude Code skills that treat each review comment as a claim and check it against the actual code: trace the execution path, read the callers, confirm library behaviour. Comments that hold up stay. Comments that don't are dropped, with the evidence.
@@ -11,6 +16,8 @@ Point it at the comments CodeRabbit left on the 50 PRs of [Code Review Bench](ht
 - lifts CodeRabbit's F1 from **35.2% to 40.4%** (+5.2 points, 95% CI +1.9 to +8.3)
 
 ![pr-proof checking CodeRabbit's comments](assets/demo/filter.gif)
+
+If pr-proof saves you from acting on a wrong review comment, a ⭐ helps other people find it.
 
 ## The skills
 
