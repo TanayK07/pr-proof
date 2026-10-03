@@ -1,0 +1,26 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "String concatenation should not be performed inside the append method - the '+' operator creates unnecessary intermediate String objects. Should use builder.append(foundProviders.get(i).getClass().getName()).append(\", \") instead"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Lines 114-115 create ASN1Encoder instances and write to them, but the results are never used and have no side effects - these lines should be removed as they serve no purpose"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "The log message will end with a trailing comma and space (\", \") after the last provider name - consider building the list without trailing separators using StringJoiner or checking if it's the last element"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "The error message has grammatical issues - should be \"Invalid sequence with size different from 2\" or \"Invalid sequence with size not equal to 2\" instead of \"different to 2\""
+ }
+]

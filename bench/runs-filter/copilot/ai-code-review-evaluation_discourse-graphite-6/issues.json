@@ -1,0 +1,26 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "The `include_website_name` method is missing the trailing `?`, so ActiveModel::Serializer will not treat it as the inclusion hook for the `website_name` attribute, causing `website_name` to be serialized whenever it has a value regardless of inclusion conditions. Should be renamed to `include_website_name?`."
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "`website_name` is derived directly from `website` but is not treated as an untrusted attribute, so low-trust users whose `website` is intentionally hidden via `untrusted_attributes` / `restrict_user_fields?` will still leak their website through `website_name`. A TL0 user viewed anonymously can have their website exposed via this new field."
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "`website_name` should be subject to the same untrusted gating as `website` (by adding it to `untrusted_attributes` or checking `scope.restrict_user_fields?`)."
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "The new `website_name` specs only cover the happy path for a regular user and do not verify that `website_name` remains hidden for TL0 users viewed anonymously. Should add a spec in the existing 'with a TL0 user seen as anonymous' context that asserts `json` does not include a `:website_name` key when `untrusted_attributes` are filtered."
+ }
+]

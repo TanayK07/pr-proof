@@ -1,0 +1,62 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Inconsistent error handling: code uses 'throw new Error' while the rest of the file uses 'return res.status(...).json(...)' which could lead to unexpected error propagation"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Potential issue with null values in backup codes array: after a backup code is used it's set to null but the array still contains null values, polluting the array over time instead of using filter or splice to remove used codes"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Complex nested ternary operator reduces readability and should be refactored to use if-else statement or helper function"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "No validation for backup codes exhaustion: when all 10 backup codes are used (all set to null), there's no specific error message to help users understand they need to regenerate codes"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Function named 'TwoFactor' but component handles backup codes - should be renamed to 'BackupCode' to match actual functionality"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "resetState function doesn't reset all state variables (backupCodes, backupCodesUrl, dataUri, secret, isSubmitting) and doesn't revoke backupCodesUrl to prevent memory leaks"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "Missing input validation for backup code format (expected 'XXXXX-XXXXX' with optional dash) - should add client-side format validation for better UX"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "Test coverage is incomplete: backup code login and disabling 2FA with backup code are not yet tested as indicated by TODO comment"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "formatBackupCode arrow function is used before it is defined which is confusing and could be error-prone - should be moved before handleSetup function"
+ },
+ {
+  "id": 9,
+  "path": null,
+  "line": null,
+  "issue": "Memory leak potential: blob URL created for backup codes download is never revoked when component unmounts - need useEffect cleanup function"
+ }
+]

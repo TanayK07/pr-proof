@@ -1,0 +1,14 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Cleanup is using incorrect alias - should use 'idp-alias-20' instead of literal string 'alias', causing cleanup to fail and potentially leave test data behind"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Cleanup is using incorrect alias - should use 'idp-alias-' + i instead of literal string 'alias', causing cleanup to fail and potentially leave test data behind"
+ }
+]

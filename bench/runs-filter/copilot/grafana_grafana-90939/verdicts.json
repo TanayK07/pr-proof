@@ -1,0 +1,8 @@
+[
+  {
+    "id": 0,
+    "verdict": "PARTIALLY_VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "pkg/api/webassets/webassets.go:41-49: the cache is read under RLock, and if it is nil (or Env==Dev) the code takes the write Lock at line 48 and reloads unconditionally, with no re-check of entryPointAssetsCache. So the factual part is right: N goroutines that miss the cache at the same time will each re-read assets-manifest.json one after another. This can happen because GetWebAssets runs on every request (pkg/api/index.go:82, pkg/api/frontendsettings.go:62, pkg/middleware/recovery.go:141). Calling it a 'race condition' overstates it. Every read and write of entryPointAssetsCache (lines 42-44 and 69-70) happens under the mutex, so there is no data race. Each reload builds the same result from the same file and writes it under the exclusive lock, so the redundant work is harmless and only happens during the brief cold-start window. In Dev mode (cfg.Env == setting.Dev) reloading on every call is intended, so a re-check would need to skip Dev. Optional fix: after Lock(), add `if cfg.Env != setting.Dev && entryPointAssetsCache != nil { return entryPointAssetsCache, nil }`."
+  }
+]

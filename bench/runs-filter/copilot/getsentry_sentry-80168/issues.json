@@ -1,0 +1,32 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "The value passed to `build_mock_occurrence_and_event` should be `10` instead of `6` to match the data packet setup on line 177 where `\"group_2\": 10` is specified, causing the test to create an occurrence with incorrect data"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "The `MetricAlertDetectorHandler` class inherits from `StatefulDetectorHandler` but doesn't implement required abstract methods: `counter_names` (property), `get_dedupe_value`, `get_group_key_values`, and `build_occurrence_and_event_data`, which will cause instantiation errors"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "The abstract method `build_occurrence_and_event_data` lacks a docstring explaining its purpose, parameters, and return value"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "The TODO comment states 'This will be a stateful detector when we build that abstraction' but the class is already inheriting from `StatefulDetectorHandler`, making the comment outdated"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "The docstring states that the method 'returns a list of `DetectorEvaluationResult`' but the signature now returns a dict keyed by `DetectorGroupKey`, making the docstring incorrect"
+ }
+]

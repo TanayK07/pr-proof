@@ -1,0 +1,14 @@
+[
+  {
+    "id": 0,
+    "verdict": "INVALID",
+    "actionable": "NO",
+    "evidence": "The PR already captures the span context where it matters: resource/search.go:173 (init), resource/search.go:310 (build) and sql/backend.go:126 (GetResourceStats) now use `ctx, span := tracer.Start(...)`. The only discarded context left in the diff is search/bleve.go:88 (BuildIndex). After line 88, BuildIndex never uses ctx again (bleve.New/NewMemOnly, getAllFields, builder(idx) and idx.Flush() take no context), so there are no child operations in that function to link. The builder callback is a closure built in resource/search.go:323-345 that captures the caller's ctx (the searchSupport Build span). Writing `ctx, span :=` at bleve.go:88 would assign a value nothing reads, which ineffassign/staticcheck would flag. Nesting the ListIterator spans under the bleve span would need a different builder signature, which is outside this comment. The other discarded contexts (sql/backend.go:158, 353, 388) are not in this PR's diff."
+  },
+  {
+    "id": 1,
+    "verdict": "PARTIALLY_VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "Overstated. The cache write at search/bleve.go:137-139 is still guarded by cacheMu, so there is no data race. The duplicate build for the same key already happened before this PR: getOrCreateIndex (resource/search.go:287-306) calls GetIndex and then build without holding a lock across both steps. Under the old whole-function lock, two callers that both missed the cache would still each build the index, one after the other, and the second would overwrite the first. The TODO at search.go:288-290 already notes this. With this PR those duplicate builds run in parallel instead of one after the other. That is wasted work, not a correctness bug. In the hot path this PR targets (init, search.go:186-193), keys are unique: resource_stats.sql uses GROUP BY namespace, group, resource, so each key is built exactly once. Init now runs in NewResourceServer (server.go:258) before any gRPC call is served, so init builds cannot overlap with query-time getOrCreateIndex builds. A remaining edge case is two concurrent first searches for the same uncached key. Per-key singleflight in getOrCreateIndex (not sync.Map in BuildIndex) would remove that duplicate work. It is a reasonable follow-up, not a blocker."
+  }
+]

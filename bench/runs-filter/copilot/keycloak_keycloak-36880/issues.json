@@ -1,0 +1,44 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "getEvaluationContext(...) is currently unused (no callers in this class) - consider removing it and related imports to keep V2 implementation minimal and avoid dead code"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Javadoc for requireView() is incorrect: method returns void and throws when view is not allowed, it does not 'return true' - update comment to describe the exception/behavior"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Javadoc for requireViewClientScopes() is incorrect: method returns void and throws when client-scope viewing is not allowed, it does not 'return true' - update comment to describe the exception/behavior"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "registerListener is gated by ADMIN_FINE_GRAINED_AUTHZ (v1) but calls management(...) which can return V2 implementations when ADMIN_FINE_GRAINED_AUTHZ_V2 is enabled - if both features are enabled, listener can call V2 methods like clients().setPermissionsEnabled(...) which throws UnsupportedOperationException, causing runtime failures on client/group/role removal events"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Unused import org.keycloak.admin.client.Keycloak should be removed (not referenced in test class)"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Unused import org.keycloak.authorization.model.Scope should be removed (not referenced in this class)"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "Static import AdminPermissionManagement.TOKEN_EXCHANGE and the logger field are unused in this class - remove them to avoid dead code and style/lint violations"
+ }
+]

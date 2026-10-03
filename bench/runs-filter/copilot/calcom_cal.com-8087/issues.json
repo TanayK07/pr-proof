@@ -1,0 +1,26 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "In handleCancelBooking.ts:470, using async callbacks in forEach creates fire-and-forget promises that are not awaited, causing calendar deletion operations to not be properly waited for before the function continues, leading to incomplete deletions or race conditions"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "In wipemycalother/lib/reschedule.ts:134, using async callbacks in forEach creates fire-and-forget promises that are not awaited, causing calendar deletion operations to execute asynchronously without being properly awaited before the function completes"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "In vital/lib/reschedule.ts:134, using async callbacks in forEach creates fire-and-forget promises that are not awaited, causing calendar deletion operations to execute asynchronously without being properly awaited before the function completes"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "In bookings.tsx:567, using async callbacks in forEach creates fire-and-forget promises that are not awaited, causing the parent function to continue execution without waiting for async operations to complete, potentially causing race conditions or incomplete operations"
+ }
+]

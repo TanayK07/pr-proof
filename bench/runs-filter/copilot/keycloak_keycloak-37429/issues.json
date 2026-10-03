@@ -1,0 +1,50 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Method name 'santizeAnchors' is misspelled - should be 'sanitizeAnchors' (with an 'i') at the call site"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Lithuanian language file contains Italian text 'Installa una delle seguenti applicazioni sul tuo cellulare:' instead of Lithuanian translation in login messages file"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Lithuanian language file contains Italian text 'Installa una delle seguenti applicazioni sul tuo cellulare:' instead of Lithuanian translation (same error as login messages file)"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Simplified Chinese language file (messages_zh_CN.properties) contains Traditional Chinese text '\u5728\u60a8\u7684\u624b\u6a5f\u4e0a\u5b89\u88dd\u4ee5\u4e0b\u61c9\u7528\u7a0b\u5f0f\u4e4b\u4e00\uff1a' instead of Simplified Chinese"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Comment contains misspelling 'numberic' - should be 'numeric'"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Fields POLICY_SOME_HTML and POLICY_NO_HTML should be declared as 'private static final' following Java naming conventions for constants"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "Field HTML_TAGS should be declared as 'private static final' following Java naming conventions for constants"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "Method name 'santizeAnchors' is misspelled - should be 'sanitizeAnchors' (with an 'i') in the method definition"
+ }
+]

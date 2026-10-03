@@ -1,0 +1,26 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Inconsistent filter order: The filters are applied in a different order compared to querySplitting.ts (lines 296-298), which filters by !query.hide first, then by query.expr. Both files should use the same filter order for consistency."
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Double interpolation when runShardSplitQuery calls runSplitQuery: queries are interpolated in runShardSplitQuery, then interpolated again in runSplitQuery at line 299. This can cause issues with adhoc filters being applied twice or nested variable references. Fix by adding a skipInterpolation flag to QuerySplittingOptions."
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Test mock mutates input query object instead of returning a new object like the real applyTemplateVariables method does (using object spread). This discrepancy could hide bugs related to object mutation."
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Second test mock also mutates input query object instead of returning a new object like the real applyTemplateVariables method does. Should return a new object with spread operator to match real implementation behavior."
+ }
+]

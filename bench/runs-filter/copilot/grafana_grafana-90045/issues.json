@@ -1,0 +1,68 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "In the async legacy DeleteCollection path, recordStorageDuration is called instead of recordLegacyDuration, causing the metric to be attributed incorrectly"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "go.work.sum contains a duplicated entry for github.com/grafana/grafana/pkg/apimachinery v0.0.0-20240701135906-559738ce6ae1/go.mod that needs to be de-duplicated via go work sync or go mod tidy"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "The async legacy Create uses the original obj rather than the object returned from Storage (created), causing potential metadata/resourceVersion inconsistency between stores"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "The async legacy delete uses a context derived from the request context which may be canceled when the request completes, potentially preventing the legacy delete from running"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "The async legacy update is tied to the request context which may be canceled at end of request, potentially skipping the legacy update"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Legacy Update is invoked with the original objInfo after Storage.Update has already applied it, causing UpdatedObject to be evaluated twice and potentially producing different results leading to divergence between stores"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "On Storage.Create error, recordLegacyDuration is called with startStorage instead of recordStorageDuration, mislabeling metrics"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "The async legacy write uses a context derived from the request context which can be canceled when the request completes, preventing the legacy write from running and undermining mode 3's async write safety measure"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "Delete() builds a logger with request-scoped values but stores d.Log without those values into the context, dropping structured fields for downstream calls using klog.FromContext"
+ },
+ {
+  "id": 9,
+  "path": null,
+  "line": null,
+  "issue": "On successful delete, recordStorageDuration is called with name as the kind label value instead of options.Kind, polluting metrics with object names"
+ },
+ {
+  "id": 10,
+  "path": null,
+  "line": null,
+  "issue": "On Storage.Update error, recordLegacyDuration is called with startStorage instead of recordStorageDuration, incorrectly recording legacy duration on the storage error path"
+ }
+]

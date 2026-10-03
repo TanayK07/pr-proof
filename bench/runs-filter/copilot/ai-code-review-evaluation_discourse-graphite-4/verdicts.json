@@ -1,0 +1,26 @@
+[
+  {
+    "id": 0,
+    "verdict": "INVALID",
+    "actionable": "NO",
+    "evidence": "lib/enum.rb:14-16 — Discourse's Enum numbers members from 1 by default (`start = options.fetch(:start) { 1 }`). So Post.cook_methods (app/models/post.rb:63-65) maps :regular => 1 and :raw_html => 2. The migration default of 1 (db/migrate/20131219203905_add_cook_method_to_posts.rb:3) is therefore :regular, and the raw_html shortcut at app/models/post.rb:133 only fires for posts created with cook_method: Post.cook_methods[:raw_html], as TopicEmbed.import does (app/models/topic_embed.rb:22, lib/post_creator.rb:216). Changing the default to 0 would point at no enum member."
+  },
+  {
+    "id": 1,
+    "verdict": "INVALID",
+    "actionable": "NO",
+    "evidence": "app/views/layouts/embed.html.erb:11 passes request.referer (a full URL) as postMessage's targetOrigin. The HTML spec's window.postMessage steps parse targetOrigin as a URL and use only its origin (scheme/host/port), so a path in it does not stop delivery in browsers that follow the spec. The claimed failure doesn't happen. Unrelated side notes: the referer is put into JS without escaping (ERB HTML-escapes it, but JS-escaping would be more correct), and an empty referer would throw, though ensure_embeddable (app/controllers/embed_controller.rb:26) already rejects requests with no matching referer host."
+  },
+  {
+    "id": 2,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "app/models/topic_embed.rb:47 calls `open(url).read` in import_remote, but topic_embed.rb never requires 'open-uri'. Only app/jobs/scheduled/poll_feed.rb:7 requires it. The path lib/topic_retriever.rb:44-47 -> fetch_http -> TopicEmbed.import_remote loads PollFeed only when feed_polling_enabled? is true (topic_retriever.rb:38-41). Otherwise open-uri is loaded only indirectly, e.g. via lib/oneboxer.rb:1 through cooked_post_processor. If it isn't loaded, Kernel#open treats 'http://…' as a file path and raises Errno::ENOENT. Low-priority fix: one line, `require 'open-uri'`, matching lib/oneboxer.rb:1 and lib/file_store/s3_store.rb:48."
+  },
+  {
+    "id": 3,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "app/jobs/scheduled/poll_feed.rb:33 calls `CGI.unescapeHTML(i.content.scrub)` with no nil check. SimpleRSS (Gemfile_rails4.lock:344, simple-rss 1.3.1) returns nil for any tag an item doesn't have. Plain RSS 2.0 feeds often carry only <description> (or <content:encoded>, which SimpleRSS exposes as content_encoded, not content), so i.content is nil and nil.scrub raises NoMethodError. That aborts the whole hourly job (sidekiq_options retry: false) and also TopicRetriever#perform_retrieve, which calls PollFeed inline (lib/topic_retriever.rb:39). spec/jobs/poll_feed_spec.rb only tests the guards in execute, never poll_feed itself. Fix: fall back to content_encoded/description and skip items that have no body."
+  }
+]

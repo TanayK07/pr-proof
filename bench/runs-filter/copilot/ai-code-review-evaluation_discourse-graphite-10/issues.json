@@ -1,0 +1,32 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Both `update` and `destroy` methods look up the embeddable host with `EmbeddableHost.where(id: params[:id]).first` and then immediately dereference it; if no record exists for the given id, this will raise a `NoMethodError` instead of returning a 404-style error. Should use `EmbeddableHost.find(params[:id])` or explicitly handle the `nil` case"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "The file now only defines the `:embeddable_host` fabricator while `:category`-related fabricators have been moved into `spec/fabricators/embeddable_host_fabricator.rb`, inverting the usual convention. The `:category` fabricators should be in `category_fabricator.rb` and `:embeddable_host` fabricator in `embeddable_host_fabricator.rb`"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "The description string 'with an emeddable host' contains a typo - `emeddable` should be `embeddable`"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "In the test, `store.find('fruit', 2)` requests fruit with id 2 (banana with `color_ids: [3]`), but expectations assert the `colors` association has ids 1 and 2. The pretender route always returns `fruits[0]` (id 1 with `color_ids: [1,2]`), so the test passes only because the route ignores the requested id. The fixture, pretender route, or requested id should be adjusted to align"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "The migration assumes `SELECT c.id ... WHERE s.name = 'embed_category'` and `SELECT value FROM site_settings WHERE name = 'uncategorized_category_id'` always return at least one row, but if either setting is missing or `embed_category` doesn't match an existing category name, `execute(...)[0]` will return `nil` and calling `['id']`/`['value']` on it will raise, breaking the migration. Should check `cmd_tuples` or presence of the first row before indexing"
+ }
+]

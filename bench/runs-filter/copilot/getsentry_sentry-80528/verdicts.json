@@ -1,0 +1,3 @@
+[
+  {"id": 0, "verdict": "VALID", "actionable": "YES", "evidence": "src/sentry/monitors/logic/incident_occurrence.py:132 docstring of get_failure_reason reads 'Builds a humam readible string from a list of failed check-ins.' -- 'humam' is a typo for 'human' (and 'readible' should be 'readable'). The text was moved verbatim from mark_failed.py (removed line in the diff), so the typo predates the PR, but the PR re-adds it in a new file and the one-line docstring fix is trivial with no behavioral impact."}
+]

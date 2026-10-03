@@ -1,0 +1,26 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "The variable `upsampling_enabled` is assigned from `should_upsample` but serves no purpose as both names refer to the same boolean value - consider using `should_upsample` directly throughout the function to reduce redundancy"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "The `transform_query_columns_for_error_upsampling` call is duplicated in three separate locations (lines 233, 277, and 296) - consider extracting this conditional transformation logic into a helper function or performing it once before the conditional branches to reduce code duplication"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Using Python's built-in `hash()` function can produce different values across process restarts, causing cache inconsistency in distributed systems - consider using a deterministic hash function like `hashlib.md5` or storing the sorted project IDs directly in the cache key"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "The cache key generation uses Python's `hash()` which is not deterministic across processes, potentially causing the invalidation to target a different cache key than the one used in `is_errors_query_for_error_upsampled_projects` - use the same deterministic approach for both functions"
+ }
+]

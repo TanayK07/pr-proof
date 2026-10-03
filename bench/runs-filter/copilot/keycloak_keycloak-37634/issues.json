@@ -1,0 +1,32 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "The null check is validating the wrong parameter - checks 'grantType' instead of 'rawTokenId', meaning rawTokenId could be null and pass validation"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "The matcher logic is inverted - when the grant shortcut matches the expected value, the method returns false instead of true, causing all test assertions using this matcher to fail"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "The substring indices are incorrect - code uses substring(3, 5) which extracts indices 3-4, but should be substring(4, 6) to correctly extract the grant type shortcut at positions 4-5"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "The comment incorrectly states 'starts at character 4th char' which is ambiguous - should be clarified to say 'Grant type shortcut is at positions 4-5 (0-indexed)' or 'Grant type shortcut starts at index 4'"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "The documentation states '3-letters shortcut' but all implemented shortcuts are 2 characters long - should be corrected to say '2-character shortcut' to match the actual implementation"
+ }
+]

@@ -1,0 +1,11 @@
+{
+ "seconds": 42,
+ "stderr": "",
+ "cost_usd": 0.3273304,
+ "is_error": false,
+ "num_turns": 7,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "I checked all three review issues against the code. Two are fully correct but only optional to fix, and one is partly correct. No code was changed and no replies were posted. The verdicts are in `verdicts.json`, which I confirmed is valid JSON.\n\n| # | Category | Verdict | Actionable |\n|---|---|---|---|\n| 0 | Correctness / Security | VALID | OPTIONAL |\n| 1 | Security | PARTIALLY_VALID | OPTIONAL |\n| 2 | Nitpick | VALID | OPTIONAL |\n\n**0. Recovery codes can be reused:** the claim is right. The test user-storage provider (`BackwardsCompatibilityUserStorage`) accepts any code in the stored list and never removes it after a successful login. It also rebuilds the full list from scratch every time it's read, so:\n- the login page always asks for code #1;\n- the \"all codes used\" state is never reached.\n\nKeycloak's own built-in check (`RecoveryAuthnCodesCredentialProvider.java:99-119`) only accepts the next code in order and then removes it. Separately, the authenticator's cleanup for used-up codes (`RecoveryAuthnCodesFormAuthenticator.java:80-87`) only deletes codes stored in Keycloak's own database, not ones in user storage. This only affects a test provider, not production code, so fixing it is optional. It is still the reference example for this feature, and the new tests don't check that a code works only once.\n\n**1. Raw codes sent to user storage:** the fact is right. `CredentialHelper.createRecoveryCodesCredential` sends the raw codes as JSON through `updateCredential`, while the local path stores them hashed (`RecoveryAuthnCodesCredentialModel.java:65-74`). The reviewer overstates it, though: passwords already reach storage providers raw through the same method, and each provider is expected to protect what it stores. Sending hashed codes, or documenting that providers must hash them, would be optional hardening.\n\n**2. Javadoc typo:** the claim is right. `RecoveryAuthnCodesUtils.java:54` says \"a optional  credential model\" (wrong article, double space). It's a trivial fix with no effect on behavior.\n\nI skipped the skill's web-research step because there was no network; the verdicts rest on the code alone."
+}

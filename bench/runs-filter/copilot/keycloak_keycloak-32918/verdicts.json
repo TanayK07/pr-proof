@@ -1,0 +1,14 @@
+[
+  {
+    "id": 0,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "OrganizationCacheTest.java:425 registers cleanup as testRealm().identityProviders().get(\"alias\")::remove right after creating the IDP with alias \"idp-alias-20\" (line ~418). No IDP named \"alias\" exists, so the cleanup never removes idp-alias-20. When cleanup runs, IdentityProviderResource.delete() (services/.../admin/IdentityProviderResource.java:132-133) throws NotFoundException because the model is null. TestCleanup.executeCleanup() (testsuite/.../util/TestCleanup.java:129) runs generic cleanups without catching anything, so the 404 stops the remaining cleanups. AbstractKeycloakTest.afterAbstractKeycloakTest (lines 246-251) then rethrows it as a RuntimeException. isImportAfterEachMethod() returns false (AbstractKeycloakTest.java:271-273), so the realm is shared across test methods and leftover IDPs leak into later tests. Fix: use get(\"idp-alias-20\"). The same bug was copied from the existing testCacheIDPByOrg at line 303."
+  },
+  {
+    "id": 1,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "OrganizationCacheTest.java:381 registers get(\"alias\")::remove inside the loop that creates idp-alias-0..19 (line 374). None of the 20 IDPs is cleaned up, and each registered cleanup gets a 404 from IdentityProviderResource.java:132-133. TestCleanup.java:129 does not catch it, so cleanup is aborted and AbstractKeycloakTest.java:246-251 rethrows. The realm is reused across methods (isImportAfterEachMethod()==false, AbstractKeycloakTest.java:271-273). One caveat on the suggested fix: the test deletes idp-alias-1 itself at line 428. A cleanup registered as get(\"idp-alias-\" + i)::remove would therefore still 404 for i=1 and break cleanup the same way. The fix needs to skip or tolerate idp-alias-1, e.g. by catching NotFoundException or by not registering cleanup for that IDP."
+  }
+]

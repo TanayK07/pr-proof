@@ -1,0 +1,20 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Constructor parameter type changed from InsightsBookingServiceOptions (validated via zod schema) to InsightsBookingServicePublicOptions (no runtime validation), which is inconsistent with InsightsRoutingService pattern and reduces type safety"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "InsightsBookingServicePublicOptions type appears unused and unnecessary - constructor accepts this type but validates against insightsBookingServiceOptionsSchema, creating confusion with two similar types"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Caching tests were removed from the test suite but the service implementation still includes caching logic - caching behavior should continue to be tested to ensure it works correctly with Prisma.Sql objects"
+ }
+]

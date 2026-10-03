@@ -1,0 +1,74 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "The createEvent method signature is missing the credentialId: number parameter that's now required by the Calendar interface"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Error handling logic checks for Prisma.PrismaClientKnownRequestError but wraps it in HttpError with status 400 - Prisma errors can have different causes and some might warrant a 500 status instead of 400"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "N+1 query pattern for collective events with multiple hosts - separate database query for each destination calendar's credential if not found in calendarCredentials - should batch credential lookups with prisma.credential.findMany"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Potential runtime error: mainHostDestinationCalendar could be undefined when the array is empty or destinationCalendar is null/empty - accessing .integration property on undefined will throw an error"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Logic error: condition will always evaluate to the externalCalendarId parameter when provided - the .find() looking for cal.externalId === externalCalendarId makes the ternary redundant"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Same logic error in updateEvent method: when externalCalendarId is provided, the .find() makes the ternary redundant, and when externalCalendarId is null/undefined, the find will never match anything"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "Code duplication: logic for fetching credentials from database appears in both createAllCalendarEvents and updateAllCalendarEvents - should extract into helper method like getOrFetchCredential(credentialId)"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "Potential runtime error: if evt.destinationCalendar is null, calling .push() will throw an error - should check if evt.destinationCalendar exists before attempting to push or initialize as empty array"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "Change inverts conditional logic for when slug is set - previously added when !IS_TEAM_BILLING_ENABLED was true, now added when IS_TEAM_BILLING_ENABLED is true - breaking behavioral change unrelated to destinationCalendar array conversion"
+ },
+ {
+  "id": 9,
+  "path": null,
+  "line": null,
+  "issue": "Error handling wraps multiple different error conditions with generic messages - specific error messages are lost when caught and re-thrown as HttpError with generic 'Unable to load users' message"
+ },
+ {
+  "id": 10,
+  "path": null,
+  "line": null,
+  "issue": "Similar N+1 query pattern in updateAllCalendarEvents: when updating events for collective bookings with multiple calendar references, separate DB query made for each missing credential"
+ },
+ {
+  "id": 11,
+  "path": null,
+  "line": null,
+  "issue": "Potential N+1 query pattern in cancel booking: for each calendar reference, if credential not found in user's credentials, separate DB query is made"
+ }
+]

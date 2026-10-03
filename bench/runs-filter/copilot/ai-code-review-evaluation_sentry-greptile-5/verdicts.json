@@ -1,0 +1,8 @@
+[
+  {
+    "id": 0,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "static/app/views/dashboards/widgetCard/chart.tsx:164-174: when organization.features includes 'use-table-widget-visualization', TableWidgetVisualization is rendered with hardcoded columns={[]} and tableData={{data: [], meta: {fields: {}, units: {}}}}. The loop variables result (result.data, result.meta) and fields/fieldAliases computed at lines 158-159 are only passed to the StyledSimpleTableChart fallback (lines 176-192). TableWidgetVisualization (static/app/views/dashboards/widgets/tableWidget/tableWidgetVisualization.tsx:17-26) renders from tableData, so every table widget would show an empty table once the flag is on. Loading state, title, and the custom field renderers are also dropped. Impact is limited for now: grep finds no backend registration of 'use-table-widget-visualization' under src/, so the flag is effectively off and this looks like in-progress scaffolding. It is still a real defect in the flagged path and should be fixed by mapping result.data/result.meta and the fields/fieldAliases into tableData and columns before the flag is enabled."
+  }
+]

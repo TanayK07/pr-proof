@@ -1,0 +1,32 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Comments suggest negative offsets are supported but Django queryset slicing does not support negative start indexes and will raise AssertionError if start_offset < 0 - need to either remove/reword the comment or normalize negative offsets before slicing"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "OptimizedCursorPaginator.get_item_key assumes self.key refers to a numeric field (passes value to math.floor/math.ceil) but the usage in organization_auditlogs.py passes order_by='-datetime' where value is a datetime instance, which will raise TypeError"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "The advanced negative-offset branch relies on queryset[start_offset:stop] with potentially negative start_offset, but Django querysets do not support negative slicing and will raise AssertionError - need to translate negative offsets into equivalent positive slices"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "OptimizedCursorPaginator introduces new pagination behavior including negative-offset branch but has no tests covering it, while existing paginator behaviors are tested in tests/sentry/api/test_paginator.py"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "The optimized pagination path for audit logs (OptimizedCursorPaginator with optimized_pagination=true query param) is unrelated to the spans buffer insertion optimization described in PR title - should be in a separate PR for clarity and easier rollback"
+ }
+]

@@ -1,0 +1,20 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Recovery code validation accepts any matching code and never consumes a code after successful authentication, allowing codes to be reused indefinitely and the requested code number will never advance"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Recovery codes are serialized and sent as raw/plaintext to user-storage via updateCredential, which is inconsistent with the built-in local credential (hashed secretData) and increases exposure if the user store is compromised"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Javadoc grammar error: 'a optional' should be 'an optional' (also remove the extra space)"
+ }
+]

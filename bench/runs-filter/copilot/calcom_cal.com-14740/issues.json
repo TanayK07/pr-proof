@@ -1,0 +1,68 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Direct mutation of props: The value prop is being mutated directly with 'value = value || []'. This is generally considered bad practice in React as it mutates the input parameter."
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Inconsistent naming: The action id is 'add_members' but the feature is about adding guests, not members. This creates confusion with the data-testid in AddGuestsDialog which is also 'add_members'. Should use 'add_guests' for consistency."
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Critical authorization bug: The logic uses AND (&&) when it should use OR (||). Currently, a user must be BOTH an admin AND an owner to pass this check, which is impossible since a user can only have one role. This means team admins who are not owners cannot add guests."
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "The isInvalidEmail error state persists even after the user modifies the email values. Once set to true, it remains visible until the dialog is closed or canceled. Should reset this error state when the user modifies the multiEmailValue."
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Case sensitivity issue in email comparison: The newGuests array contains email addresses as provided by the user, while attendee.email comes from the database. If there's any case difference, the comparison will fail and new guests will receive AttendeeAddGuestsEmail instead of AttendeeScheduledEmail."
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Case sensitivity issue in duplicate check: The comparison between guest and attendee.email is case-sensitive. This means if an attendee exists with email 'User@Example.com' and someone tries to add 'user@example.com', it will be treated as a different email and allowed through."
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "Using array index as React key is an anti-pattern, especially when items can be added or removed. When an item is removed, React may incorrectly match components to their state, leading to bugs."
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "Error swallowing without proper logging: The catch block only logs a generic message without logging the actual error details. This makes debugging difficult if email sending fails."
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "Case sensitivity bug: The blacklistedGuestEmails are converted to lowercase, but the guest emails being compared are not. This means the blacklist check will fail if a guest email has uppercase characters."
+ },
+ {
+  "id": 9,
+  "path": null,
+  "line": null,
+  "issue": "The validation logic does not filter out empty strings before checking. When the dialog starts with multiEmailValue set to [''], if a user clicks 'Add' immediately, it will attempt to validate an array containing an empty string."
+ },
+ {
+  "id": 10,
+  "path": null,
+  "line": null,
+  "issue": "Missing eventTypeMetadata parameter: The sendAddGuestsEmails function does not check eventTypeDisableHostEmail and eventTypeDisableAttendeeEmail flags like other similar email functions in this file. This means emails will be sent even if the event type has these email notifications disabled."
+ }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "id": 0,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "app/serializers/user_serializer.rb:153 defines `include_website_name` without `?`. Gemfile.lock:22 pins active_model_serializers 0.8.3, which only looks for `include_<attr>?` hooks, as do every other hook in this file (user_serializer.rb:9,18,27,117,161,169...). So the method is dead code and `website_name` is always serialized (as null when no website is set)."
+  },
+  {
+    "id": 1,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "user_serializer.rb:24-33 untrusted_attributes defines `include_<attr>?` returning false when scope.restrict_user_fields?(object), which is TL0 + anonymous (lib/guardian/user_guardian.rb:58-60). `website` is in that list (user_serializer.rb:105-111), but `website_name` is only added to plain `attributes` (line 43). Its getter (lines 137-151) calls the `website` method directly, which reads object.user_profile.website without any gating (line 133-135). So a TL0 user seen anonymously has `website` hidden but `website_name` (host or host+path) exposed, defeating the existing restriction."
+  },
+  {
+    "id": 2,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "Same root cause as id 1: website_name is in `attributes` (user_serializer.rb:43), not `untrusted_attributes` (lines 105-111). Moving `:website_name` into untrusted_attributes would generate `include_website_name?` that checks scope.restrict_user_fields?(object) and presence (lines 26-31), which also fixes the misnamed hook from id 0 (and the hand-written method at line 153 could be dropped)."
+  },
+  {
+    "id": 3,
+    "verdict": "VALID",
+    "actionable": "YES",
+    "evidence": "spec/serializers/user_serializer_spec.rb:6-16 has the 'with a TL0 user seen as anonymous' context whose untrusted_attributes list (line 11) does not include :website_name. The new specs (lines 76-90) only cover the hostname comparisons for a normal user. Adding :website_name to that list (with a website set on the profile) would have caught the leak from id 1. Even without setting a website, `not_to have_key(:website_name)` would fail today, because the broken hook (id 0) means the key is always emitted, as null when there's no website. Setting a website on the profile in that context would also check the actual leak."
+  }
+]

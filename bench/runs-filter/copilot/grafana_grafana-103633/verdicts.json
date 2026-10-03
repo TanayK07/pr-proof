@@ -1,0 +1,38 @@
+[
+ {
+  "id": 0,
+  "verdict": "PARTIALLY_VALID",
+  "actionable": "OPTIONAL",
+  "evidence": "pkg/services/authz/rbac/service.go:116-121 checks permDenialCache before anything else, and service.go:153-155 writes a denial with no invalidation path. The denial is not permanent, though: it uses shortCacheTTL = 30s (service.go:32, :85). That is the same TTL as permCache, and before this PR a stale permCache already delayed new grants by up to 30s. So the real effect is that a grant made right after a cached denial is still denied for up to 30s. That is a bounded staleness window, not permanent denial. Fixing it would need explicit invalidation on permission writes, which isn't in scope here."
+ },
+ {
+  "id": 1,
+  "verdict": "INVALID",
+  "actionable": "NO",
+  "evidence": "pkg/services/authz/rbac/service.go:379-406: getUserPermissions queries with ActionSets (folders:edit/admin for folders:create, service.go:325-328) and stores the resulting scope map under userPermCacheKey(ns, uid, action). The key is the base action only. getCachedIdentityPermissions (service.go:342-368) reads that same key, so the cached map already includes the action-set grants. Cache reads and DB fetches return the same data."
+ },
+ {
+  "id": 2,
+  "verdict": "PARTIALLY_VALID",
+  "actionable": "OPTIONAL",
+  "evidence": "Removing the 'should return permissions from cache' case from TestService_getUserPermissions (service_test.go:~342) was correct, because getUserPermissions no longer reads permCache (service.go:379-380). The leftover tc.cacheHit branches in that test (service_test.go:367, 388) are now dead code. getCachedIdentityPermissions is covered indirectly by TestService_CacheCheck and TestService_CacheList, but it has no direct unit test. Its anonymous branch (service.go:348-352) and the unsupported/render branches are not exercised at all. Adding a small direct test would be a nice-to-have."
+ },
+ {
+  "id": 3,
+  "verdict": "VALID",
+  "actionable": "YES",
+  "evidence": "service_test.go 'Should deny on explicit cache deny entry' sets permCache to map{\"dashboards:uid:dash1\": false}, and the comment says this 'Allow[s] access ... to prove this is not checked'. But getScopeMap (service.go:569-579) only ever stores true, and checkPermission tests truthiness (service.go:558 `if scopeMap[t.scope(req.Name)]`). So false behaves like absent and grants nothing. So the seeded cache entry can never cause an allow. If the denial cache were removed, the cache check would not allow, and the request would fall through to the empty default fakeStore from setupService (service_test.go:1328), which has no grant. The test therefore does not prove what its comment claims: that the denial cache overrides a cached grant. The value should be true."
+ },
+ {
+  "id": 4,
+  "verdict": "PARTIALLY_VALID",
+  "actionable": "OPTIONAL",
+  "evidence": "pkg/services/authz/rbac/cache.go:30-32 does use a '_' delimiter, so 'without delimiters' is inaccurate. However, '_' is a legal character in Grafana UIDs, so the reviewer's own example collides: name='dash', parent='1_fold1' and name='dash_1', parent='fold1' both produce '..._dash_1_fold1'. The failure is fail-closed (a false denial for up to 30s, not an escalation) and needs crafted or unusual UIDs. A cheap fix is a separator that can't appear in UIDs, or length-prefixing the parts."
+ },
+ {
+  "id": 5,
+  "verdict": "VALID",
+  "actionable": "OPTIONAL",
+  "evidence": "service.go:153-155 writes permDenialCache when the DB-backed check denies. No test in service_test.go asserts that write. TestService_CacheCheck only pre-seeds the denial cache ('Should deny on explicit cache deny entry') and checks the read path. A test that does a denied Check and then asserts permDenialCache.Get(userPermDenialCacheKey(...)) is ok would cover it."
+ }
+]

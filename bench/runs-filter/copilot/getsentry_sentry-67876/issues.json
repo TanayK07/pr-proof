@@ -1,0 +1,32 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Bare except clause catches all exceptions including system-level exceptions like KeyboardInterrupt and SystemExit. Should be replaced with more specific exception types like UnicodeDecodeError or ValueError"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "No validation that 'sender' exists in integration.metadata before accessing it. Integrations created before this feature was deployed may not have the 'sender' field, causing a KeyError at runtime"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "safe_urlopen call can raise various exceptions (RequestException, Timeout, RestrictedIPAddress, SuspiciousOperation) that are not handled, resulting in a 500 error instead of proper error page"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "get_user_info function can raise HTTPError or JSONDecodeError if GitHub API returns an error or invalid JSON, resulting in a 500 error for the user"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Assignment to 'resp' is unnecessary as it is redefined before this value is used (multiple instances)"
+ }
+]

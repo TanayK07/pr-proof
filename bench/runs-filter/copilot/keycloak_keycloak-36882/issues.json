@@ -1,0 +1,20 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "The change from exit code 4 to 3 for RECREATE_UPGRADE_EXIT_CODE may break existing scripts or automation that rely on exit code 4 for recreate scenarios - this should be documented as a breaking change in release notes if the update-compatibility feature was previously released without the FEATURE_DISABLED exit code"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "The comment explaining picocli exit codes should note that exit code 3 is typically used for 'command line usage error' in picocli conventions, but here it's being used for a different semantic meaning"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "The statement 'Otherwise, the {project_name} Operator will fail' is misleading - the operator itself doesn't validate whether the rolling-updates feature is enabled, instead the Keycloak pods will fail at runtime when they execute the update-compatibility commands without the feature enabled"
+ }
+]

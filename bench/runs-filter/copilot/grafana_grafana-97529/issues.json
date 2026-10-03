@@ -1,0 +1,14 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "The trace context returned from tracer.Start() should be captured and used for subsequent operations to ensure proper trace propagation. Currently, the context is discarded which means child operations won't be properly linked to this span."
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Moving the lock from the beginning to only protect the cache write at the end could introduce a race condition. If multiple goroutines call BuildIndex concurrently for the same key, they will all build separate indices and race to update the cache. The last one to acquire the lock will overwrite the others, wasting resources. Consider using a sync.Map with LoadOrStore or implementing per-key locking to ensure only one goroutine builds an index for a given key at a time."
+ }
+]

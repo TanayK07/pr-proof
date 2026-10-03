@@ -1,0 +1,20 @@
+[
+  {
+    "id": 0,
+    "verdict": "INVALID",
+    "actionable": "NO",
+    "evidence": "This is not a breaking change for users. At the base commit, docs/guides/server/update-compatibility.adoc (exit code table, ~L112-127) already listed exit code 3 as 'Rolling Upgrade is not possible'. Only the constant in CompatibilityResult.java was 4, so the code disagreed with the docs. This PR changes the constant to 3 (CompatibilityResult.java:35) so the code now matches what was documented, and gives 4 a new meaning, FEATURE_DISABLED (CompatibilityResult.java:36). The new docs row for 4 is at update-compatibility.adoc:132. The command is still preview (preview=\"true\" in the guide header, plus printPreviewWarning). It is not mentioned in any release notes under docs/documentation/release_notes/topics, and the project version is 999.0.0-SNAPSHOT (pom.xml:34). Nothing points to a released exit-code contract that scripts could depend on, so no release note is needed."
+  },
+  {
+    "id": 1,
+    "verdict": "INVALID",
+    "actionable": "NO",
+    "evidence": "The reviewer has picocli's exit codes wrong. picocli.CommandLine.ExitCode defines OK=0, SOFTWARE=1 and USAGE=2. The command-line usage error is 2, not 3, and picocli gives 3 no meaning at all. The new comment at CompatibilityResult.java:31-34 already says this ('see picocli.CommandLine.ExitCode / 1 -> software error / 2 -> usage error'). It explains that the custom codes start at 3 so they don't collide with picocli's reserved codes. Codes 3 and 4 are free for this command to use, and the docs table (update-compatibility.adoc:117-135) matches them."
+  },
+  {
+    "id": 2,
+    "verdict": "PARTIALLY_VALID",
+    "actionable": "OPTIONAL",
+    "evidence": "The reviewer is right that the operator never checks the feature. operator/src/main/java has no reference to ROLLING_UPDATES, 'rolling-updates' or isFeatureEnabled. UpgradeLogicFactory.java:35-43 only picks RecreateOnImageChangeUpgradeLogic or AlwaysRecreateUpgradeLogic. So the CAUTION at docs/guides/operator/advanced-configuration.adoc:446-450 ('Otherwise, the Operator will fail') does not describe how this PR's code behaves. The reviewer's suggested wording is wrong too. In this PR the operator never runs update-compatibility in Keycloak pods: neither upgrade logic calls the CLI, and the only rolling-updates use is in tests (UpgradeTest sets FeatureSpec, and Dockerfile-custom-image builds with --features=rolling-updates). Pods would fail only if a user ran the commands by hand (UpdateCompatibilityCheck.java:46-50 exits with FEATURE_DISABLED). The CAUTION is probably meant to cover future operator integration, but its wording could be made more accurate. That is a doc-only change and optional."
+  }
+]

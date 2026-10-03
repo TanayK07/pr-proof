@@ -1,0 +1,14 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Typo in test method name: 'inalid' should be 'invalid'"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "The default value for `queued` uses `timezone.now()` which is evaluated at class definition time, not instance creation time. This means all instances will share the same timestamp. The dataclass should use `field(default_factory=timezone.now)` instead to ensure each instance gets its own timestamp."
+ }
+]

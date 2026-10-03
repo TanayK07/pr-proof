@@ -1,0 +1,38 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "The `end` variable is calculated using the same formula as `start` (both use `slotStartTime.hour()` and `slotStartTime.minute()`). This should calculate the slot end time using slotEndTime instead, causing incorrect validation of working hours as the end time check will always be identical to the start time check."
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Comparing dayjs objects using the `===` operator will always return false because it compares object references, not the actual date/time values. Should use `.isSame()` method instead."
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Missing space after '//' in comment for 'check if date override for slot exists'"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Missing space after '//' in comment for 'if no date override for slot exists check if it is within normal work hours'"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "The call to `checkIfIsAvailable` is missing the `dateOverrides` and `workingHours` parameters. Unlike other calls which spread the user schedule object containing these fields, this call only spreads `availabilityCheckProps` which only contains `eventLength` and `currentSeats`, potentially allowing bookings at times when the user is unavailable."
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "No test was added to verify that date overrides are properly applied to fixed hosts in round-robin scheduling scenarios, leaving the main bug fix untested despite the PR description stating this should be covered."
+ }
+]

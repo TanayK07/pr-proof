@@ -57,6 +57,15 @@ All numbers come from [Code Review Bench](https://github.com/withmartian/code-re
 
 The filter sees each of CodeRabbit's issues exactly as the benchmark extracted it (text, file, line) plus the checked-out code. It never sees the labels. Scoring uses the benchmark's own published labels, so this comparison involves no new judging.
 
+### pr-comment-validation as a filter on GitHub Copilot
+
+| | Precision | Recall | F1 | Issues posted |
+|---|---|---|---|---|
+| GitHub Copilot | 28.3% | 53.3% | 37.0% | 258 |
+| Copilot + pr-proof | **32.5%** | 48.9% | **39.1%** | 206 |
+
+It kept 67 of 73 real bugs (91.8%) and removed 46 of 185 noise issues (25%). The F1 gain (+2.1 points, 95% CI −0.8 to +5.1) is smaller than on CodeRabbit and not statistically significant. Copilot's reviews are less noisy to begin with, so there is less to remove.
+
 ### pr-review as a reviewer
 
 Plain Claude Code on Opus 5.5 is the control: same model, same isolation, no skills.

@@ -1,0 +1,38 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "The unsubscribe method calls find_by which can return nil if the TopicUser record doesn't exist, causing potential errors when calling methods on nil"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "The unsubscribe_url being passed is a relative path but needs to be a full URL to work properly in emails - should use Discourse.base_url to construct complete URL"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "The new unsubscribe action lacks test coverage for handling missing TopicUser records, setting notification levels, redirect behavior when slug doesn't match, and authentication requirements"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Trailing comma after the last property definition is inconsistent with codebase conventions and could cause issues in older JavaScript environments"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Typo in property name 'stopNotificiationsText' should be 'stopNotificationsText' (missing 't' in notifications) in the controller"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Typo in property name 'stopNotificiationsText' should be 'stopNotificationsText' in the template file to match the corrected controller property name"
+ }
+]

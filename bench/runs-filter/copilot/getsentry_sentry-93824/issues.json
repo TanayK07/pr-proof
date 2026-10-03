@@ -1,0 +1,38 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Inconsistent metric tag name: line uses 'shards' (plural) as the tag key while line 185 uses 'shard' (singular) for the same metric, causing metrics to be split across different tag keys"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "The method _create_process_for_shard is defined but never called anywhere in the code - should be removed or used in place of iterating through process_to_shards_map in _ensure_processes_alive"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Spelling error: 'fowards' should be 'forwards' in the docstring"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "After killing a multiprocessing.Process, process.close() should be called to properly release system resources and prevent zombie processes or file descriptor leaks"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "After terminating a multiprocessing.Process, process.close() should be called to properly release system resources and prevent zombie processes or file descriptor leaks"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Docstring mentions a ':param topic:' parameter that doesn't exist in the __init__ signature - should document actual parameters including 'buffer', 'next_step', 'max_processes', and 'produce_to_pipe'"
+ }
+]

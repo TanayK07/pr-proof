@@ -1,0 +1,26 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Empty catch block silently swallows exceptions without logging or recording details beyond adding to list - should log exceptions to aid debugging test failures"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Variable name 'groupUuuids' has unusual triple-'u' spelling - should be renamed to 'groupUuids' or 'groupIds' for consistency with standard naming conventions"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "The fix violates GroupModel API contract which specifies getSubGroupsCount() should never return null - when modelSupplier.get() returns null, should return 0L instead of null to maintain the contract"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Test has race condition: reader thread may not start before deletion completes or may only execute once - needs CountDownLatch to ensure reader starts before deletion, counter to track read operations, assertion that multiple reads happened, and Thread.join() to wait for reader thread completion"
+ }
+]

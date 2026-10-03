@@ -1,0 +1,80 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Async functions deleteScheduledEmailReminder and deleteScheduledSMSReminder are called without await inside forEach loop for originalRescheduledBooking.workflowReminders, causing database operations to not complete and errors to not be caught"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "CRON job doesn't filter by method: WorkflowMethods.EMAIL when cancelling reminders, causing it to attempt SendGrid API calls for SMS reminders"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Query filtering by cancelled and scheduledDate needs a composite index @@index([cancelled, scheduledDate]) for better performance since CRON job runs every 15 minutes"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Async functions deleteScheduledEmailReminder and deleteScheduledSMSReminder are called without await inside forEach loop for remindersFromStep, causing database operations to not complete and errors to not be caught"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Async functions deleteScheduledEmailReminder and deleteScheduledSMSReminder are called without await inside forEach loop for bookingToReschedule.workflowReminders, causing database operations to not complete and errors to not be caught"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Type Prisma.Prisma__WorkflowReminderClient<WorkflowReminder, never>[] is incorrect - should be Promise<WorkflowReminder>[] or let TypeScript infer it"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "When immediateDelete is true with a referenceId, the function cancels email via SendGrid but never deletes the database record, creating orphaned workflow reminder records"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "Batch deletion at line 74 will delete ALL reminders including ones whose SendGrid cancellation may have failed, resulting in database records being deleted while SendGrid email is still scheduled"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "Code attempts to cancel email using reminder.referenceId without checking if it's null - referenceId can be null for reminders scheduled more than 72 hours out, causing SendGrid API calls to fail"
+ },
+ {
+  "id": 9,
+  "path": null,
+  "line": null,
+  "issue": "Async functions deleteScheduledEmailReminder and deleteScheduledSMSReminder are called without await inside forEach loop for remindersToDelete.flat(), causing database update to set cancelled: true to not complete and errors to not be caught"
+ },
+ {
+  "id": 10,
+  "path": null,
+  "line": null,
+  "issue": "Async functions deleteScheduledEmailReminder and deleteScheduledSMSReminder are called without await inside forEach loop for scheduledReminders, causing database update to set cancelled: true to not complete and errors to not be caught"
+ },
+ {
+  "id": 11,
+  "path": null,
+  "line": null,
+  "issue": "Async functions deleteScheduledEmailReminder and deleteScheduledSMSReminder are called without await inside forEach loop for remindersToUpdate - forEach doesn't await async callbacks"
+ },
+ {
+  "id": 12,
+  "path": null,
+  "line": null,
+  "issue": "Async functions deleteScheduledEmailReminder and deleteScheduledSMSReminder are called without await inside forEach loop for booking.workflowReminders, causing database operations to not complete and errors to not be caught"
+ }
+]

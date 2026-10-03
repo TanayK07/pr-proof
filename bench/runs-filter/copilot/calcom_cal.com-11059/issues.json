@@ -1,0 +1,92 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "refreshOAuthTokens may return a fetch Response when sync is enabled, but code assumes an axios response (zohoCrmTokenInfo.data...), which will throw at runtime when syncing is turned on"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Handler doesn't restrict HTTP methods; it will process GET/PUT/etc. Should enforce POST and return 405 otherwise to align with webhook semantics"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Sync request to CALCOM_CREDENTIAL_SYNC_ENDPOINT is unauthenticated (no shared-secret header) and doesn't set a content type, risking token exfiltration via SSRF/misconfig"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "minimumTokenResponseSchema computed keys like [z.string().toString()] become literal string keys at build time, not index signatures, so schema won't validate arbitrary expiry fields"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Setting a missing refresh_token to the literal string 'refresh_token' will overwrite valid stored refresh tokens in callers when they update DB with newTokens.refresh_token"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "When sync is enabled, refreshOAuthTokens returns a fetch Response, but Google calendar code treats return value as gaxios response with .data property, causing token refresh to fail in sync mode"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "Third argument to refreshOAuthTokens is userId, but code passes credentialId (credential primary key), sending wrong identifier to sync endpoint and bypassing userId truthiness check"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "prisma is used but isn't imported in the file, which will fail at build time"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "appCredentialWebhookRequestBodySchema.parse(req.body) will throw and return 500 on invalid input; for public webhook endpoint should use safeParse and return 400/422 with validation error"
+ },
+ {
+  "id": 9,
+  "path": null,
+  "line": null,
+  "issue": "In sync mode refreshOAuthTokens returns a fetch Response, but HubSpot code expects a HubspotToken object and immediately reads expiresIn, accessToken, etc., which will fail at runtime"
+ },
+ {
+  "id": 10,
+  "path": null,
+  "line": null,
+  "issue": "Header values in req.headers[...] can be string | string[] | undefined; directly comparing to CALCOM_WEBHOOK_SECRET will fail if header is an array and can be bypassed with multiple values"
+ },
+ {
+  "id": 11,
+  "path": null,
+  "line": null,
+  "issue": "Salesforce token refresh uses response.statusText !== 'OK' for error handling; statusText is not reliable across runtimes and proxies, should use response.ok / response.status instead"
+ },
+ {
+  "id": 12,
+  "path": null,
+  "line": null,
+  "issue": "Credential update replaces key with refreshed response, but in credential-sync mode response is minimal, risking dropping required Salesforce key fields like instance_url, id, issued_at"
+ },
+ {
+  "id": 13,
+  "path": null,
+  "line": null,
+  "issue": "APP_CREDENTIAL_SHARING_ENABLED is currently a string (encryption key) rather than boolean, making flag's type misleading and causing potential truthy check or type issues"
+ },
+ {
+  "id": 14,
+  "path": null,
+  "line": null,
+  "issue": "refreshOAuthTokens can return Response from fetch when syncing enabled, but returns whatever refreshFunction() returns otherwise (axios response, HubSpot token object, gaxios response), and call sites assume specific shapes, so enabling sync will break integrations"
+ }
+]

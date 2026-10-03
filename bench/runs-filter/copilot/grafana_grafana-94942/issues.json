@@ -1,0 +1,32 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "The new SQL branch returns a generic 'sqlExpressions is not implemented' error which is misleading since the feature exists but is intentionally disabled for security, and is inconsistent with other expression errors in this reader"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "enableSqlExpressions currently always returns false and the local 'enabled' variable is inverted and then ignored - if intent is permanent disable, simplify to 'return false' and remove flag check; if intent is to gate by FlagSqlExpressions, return the correct condition so function name matches behavior"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "pkg/expr/sql.DB methods return generic 'errors.New(\"not implemented\")' which surfaces as generic runtime failure and may get wrapped/logged as 'invalid SQL' - should use a specific reusable error like ErrSQLExpressionsDisabled for consistent messaging and avoid misclassification"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "TablesList constructs duckDB and calls RunCommands which are stubbed to return 'not implemented', causing SQL queries to be treated as 'invalid sql' rather than 'feature disabled', and variable name 'duckDB' is no longer accurate"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Execute uses sql.NewInMemoryDB() and calls QueryFramesInto which always returns 'not implemented', so SQL expressions will fail at runtime if this path is reached - should fail fast with explicit 'SQL expressions disabled' error or ensure path is unreachable via feature gating"
+ }
+]

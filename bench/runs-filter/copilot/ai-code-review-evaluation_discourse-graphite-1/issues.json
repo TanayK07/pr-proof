@@ -1,0 +1,44 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "URL-download size cap is hardcoded to 10MB, ignoring site settings (max_image_size_kb / max_attachment_size_kb), which changes behavior for API URL uploads and may download larger files than admins configured, increasing bandwidth/CPU risk"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "The downsize loop ignores the return value from OptimizedImage.downsize - if conversion fails, it will retry up to 5 times without making progress and still proceed to Upload.create_for, which will then reject the file as too large"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "No test coverage for the newly introduced behavior of accepting an oversized image and automatically downsizing it below SiteSetting.max_image_size_kb"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "For HTTP 413 responses, the displayed max_size_kb is hardcoded to 10MB, which risks showing a misleading limit to users since 413 is typically driven by web server/request limits"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "downsize is defined twice in Ruby - the later definition overrides the earlier one, so calls expecting the (from, to, max_width, max_height, opts) signature will pass wrong arguments into optimize, likely raising at opts[:allow_animation]"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "No tests cover downsize invocation paths - neither the legacy downsize(path, path, w, h, opts) call pattern nor the new geometry-string usage are tested"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "Client-side upload size validation is hardcoded to 10MB and no longer respects per-type site settings (max_image_size_kb vs max_attachment_size_kb), allowing users to attempt uploads the server will reject and displaying incorrect limits in error messages"
+ }
+]

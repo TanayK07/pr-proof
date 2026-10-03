@@ -1,0 +1,11 @@
+{
+ "seconds": 30,
+ "stderr": "",
+ "cost_usd": 0.16536199999999998,
+ "is_error": false,
+ "num_turns": 5,
+ "models": [
+  "claude-opus-5-5"
+ ],
+ "final": "Both review comments are correct and both are worth fixing. I didn't change any code or post replies. The verdicts are in `verdicts.json`, which is valid JSON.\n\n**PR:** feat(ecosystem): Implement cross-system issue synchronization. Two comments analyzed.\n\n| Verdict | Count |\n|---|---|\n| Valid, needs a code change | 2 |\n\n## Comment 0: typo in a test name (\"inalid\")\n**File:** `tests/sentry/integrations/services/test_assignment_source.py:13`\n**Category:** Nitpick\n**Verdict:** Valid \u00b7 Needs a code change: yes \u00b7 Priority: low\n\nThe test is named `test_from_dict_inalid_data`, but it tests invalid input. Renaming it to `test_from_dict_invalid_data` changes nothing else.\n\n## Comment 1: `queued` default is computed once, at import\n**File:** `src/sentry/integrations/services/assignment_source.py:18`\n**Category:** Correctness\n**Verdict:** Valid \u00b7 Needs a code change: yes \u00b7 Priority: medium\n\n- **What's wrong:** `queued: datetime = timezone.now()` is a dataclass default. Python evaluates it once, when the module is imported. So every `AssignmentSource` created without an explicit `queued` gets the same import-time timestamp. That includes the ones built by `from_integration` (lines 21\u201325), which `src/sentry/integrations/utils/sync.py` calls.\n- **Fix:** `queued: datetime = field(default_factory=timezone.now)`. This also works on a frozen dataclass.\n- **Impact today:** limited. `queued` is only written out by `to_dict` and passed to the outbound sync task, and nothing in `src/` reads it yet. But the stored value is wrong, and it will matter once anything uses it.\n- **Why the tests miss it:** the test at line 36 only checks that `queued` is not None.\n\n## Recommended plan\n1. Use `field(default_factory=timezone.now)` for `queued`.\n2. Rename the test to `test_from_dict_invalid_data`."
+}

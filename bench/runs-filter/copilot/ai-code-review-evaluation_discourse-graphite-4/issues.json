@@ -1,0 +1,26 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "The `cook_method` column default of `1` conflicts with `Post.cook_methods = Enum.new(:regular, :raw_html)`, making new posts default to `:raw_html` and causing `Post#cook` to bypass the rendering/sanitization pipeline for regular user posts. Update the default to the enum value for `:regular` (e.g., `0`)"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "The `postMessage` target origin is set to the full referrer URL (`request.referer`), but browsers compare the origin (scheme/host/port) only; including the path will prevent the message from being delivered in some user agents. Build a proper origin string from the referrer using URI parsing"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Method calls `open(url)` without explicitly requiring `'open-uri'`, which can cause `open` to treat the URL as a local filename if `open-uri` has not already been loaded elsewhere. Add an explicit `require 'open-uri'` before using `open(url)`"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "The code assumes `i.content` is always present and calls `.scrub` unconditionally, but many RSS/Atom feeds only provide `description` or other fields, causing `nil.scrub` and crashing the job. Guard against missing content with fallback to `i.description` or skip items with no textual content"
+ }
+]

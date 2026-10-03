@@ -1,0 +1,26 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "The deletion query will delete ALL workflow reminders with retryCount > 1, regardless of their method type (WHATSAPP, EMAIL, etc.), even though retry logic is only being added for SMS reminders. The second OR condition should also check that the method is SMS."
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "When SMS scheduling conditions on line 158 are not met (message is empty/falsy or sendTo is missing), the reminder silently skips without incrementing the retry count, causing invalid reminders with missing data to keep getting processed on every cron run indefinitely."
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "WhatsApp reminder scheduling in scheduleWhatsappReminders.ts does not have similar retry logic, creating inconsistency where failed WhatsApp reminders will continue to retry indefinitely while SMS reminders are now limited to 2 retries."
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Reminders that are missing workflowStep or booking data are silently skipped (via continue) without incrementing retryCount, causing these invalid reminders to be processed on every cron run indefinitely."
+ }
+]

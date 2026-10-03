@@ -1,0 +1,62 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "The new OptimizedCursorPaginator class and modified pagination behavior in BasePaginator lack test coverage for the new optimized_pagination query parameter, authorization checks, pagination with negative offsets, and interaction between OptimizedCursorPaginator and datetime-based ordering"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "The query parameter name 'optimized_pagination' is checked as a string literal 'true' which bypasses serializer validation - should be added to AuditLogQueryParamSerializer with proper BooleanField validation"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Comments about negative offset support in Cursor class are misleading because no actual code changes were made to enable negative offsets - the Cursor.__init__ method already accepted negative offsets before this PR"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Allowing negative offsets creates a security concern by enabling access to arbitrary dataset positions beyond normal pagination boundaries - pagination boundaries exist as a defense-in-depth mechanism"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "The 'enable_advanced_features' parameter name conflicts with the class's own instance variable in OptimizedCursorPaginator, causing potential confusion"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "The authorization check 'organization_context.member.has_global_access' may fail with AttributeError if organization_context.member is None (e.g., when user has superuser access but is not an org member)"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "Django QuerySets do not support negative slicing - when a negative value is passed as the start index in queryset[start_offset:stop], Django will raise an AssertionError"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "OptimizedCursorPaginator is incompatible with DateTimePaginator usage - it inherits from BasePaginator and provides integer-based value_from_cursor that doesn't handle datetime conversion needed for order_by='-datetime'"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "The same negative slicing issue exists in OptimizedCursorPaginator - the comment claims Django ORM handles negative slicing automatically but this is factually incorrect"
+ },
+ {
+  "id": 9,
+  "path": null,
+  "line": null,
+  "issue": "OptimizedCursorPaginator contains substantial code duplication from BasePaginator.get_result, violating DRY principle - should override specific methods rather than duplicating entire get_result implementation"
+ }
+]

@@ -1,0 +1,62 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "totalPages is computed with Math.floor(user_count / limit) + 1, which over-counts when user_count is an exact multiple of limit (e.g., 50 users @ limit 50 reports 2 pages). Use Math.ceil(user_count / limit) for correct pagination."
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "next sets offset to min(offset + limit, user_count), which can move the offset past the last valid page start and produce an empty result set. Clamp to the last page start (e.g., max(user_count - limit, 0)) to avoid navigating to empty pages."
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "create forces group.visible to false whenever the param is omitted (nil == \"true\"), overriding the model default (visible is true by default). Only assign visible when the param is present to avoid new groups becoming invisible."
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "create ignores alias_level even though the client sends it, so alias level is not persisted."
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "update unconditionally sets group.visible based on a string comparison; if visible is omitted from the request it will be reset to false. Only update visible when the param key is present to avoid unintended visibility changes from partial updates."
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "add_members uses group.add(user) (which persists the join row immediately) and then calls group.save to decide success. If group.save fails, the endpoint can return an error even though memberships were already added. Persist membership changes atomically instead."
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "remove_member uses group.users.delete(user_id) on a has_many :through, which deletes join rows without running GroupUser destroy callbacks, so the user_count counter_cache can become incorrect. Use group.group_users.where(user_id: user_id).destroy_all instead."
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "findMembers returns undefined when name is empty (return ;), but callers sometimes treat it like a promise. Return a resolved promise consistently."
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "The offset clamping in findMembers allows offset === user_count (and the controller's next action also clamps to user_count), which yields an empty page and breaks page count math. Clamp offset to the highest valid page start."
+ },
+ {
+  "id": 9,
+  "path": null,
+  "line": null,
+  "issue": "Database query operation happens inside a loop and could be hoisted to a single call outside the loop for better performance."
+ }
+]

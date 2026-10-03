@@ -1,0 +1,32 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Log statements use log.Error for informational/debug logging during normal operation instead of log.Debug, which should be reserved for actual error conditions"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Logging the entire ids array could result in very large log entries (up to 32767 items), impacting performance and log storage - should remove the ids field or limit to just the count"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "String concatenation in a loop using fmt.Sprintf is inefficient for large batches - should use strings.Builder for better performance when constructing comma-separated list of IDs"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Comment about SQLite parameter limit of 999 is only accurate for versions before 3.32.0 - should clarify this is for compatibility with older versions since modern SQLite has a default limit of 32767"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Cleanup job ticker interval changed from 10 minutes to 1 minute, but cleanup job has 9-minute timeout, causing overlapping cleanup jobs to run concurrently leading to resource contention"
+ }
+]

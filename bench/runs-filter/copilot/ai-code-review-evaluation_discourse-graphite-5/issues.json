@@ -1,0 +1,20 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Comment should have a space after `//` for consistency with other comments in the file"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Trailing whitespace should be removed from the end of the line"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Missing space after colon in SCSS property declaration for consistency with formatting conventions"
+ }
+]

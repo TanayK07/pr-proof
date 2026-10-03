@@ -1,0 +1,14 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Race condition in read-modify-write operation (lines 14-16) when multiple requests check the same email simultaneously, resulting in inaccurate match_count values due to non-atomic increment"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Calling save without error handling means failures will be silently ignored, leading to inconsistent data"
+ }
+]

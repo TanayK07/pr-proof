@@ -1,0 +1,32 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "ensure_loaded! method reads and potentially modifies @loaded_locales without proper synchronization, bypassing LOAD_MUTEX protection used in load_locale, leading to race conditions in multi-threaded environments"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "FallbackLocaleList#[] method calls SiteSetting.default_locale.to_sym without checking if the setting is available, which could raise an error during application initialization before site settings are loaded"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "ensure_loaded! method iterates over I18n.locale and its fallbacks, but I18n.locale may not be set at the time the initializer runs, causing issues if accessed before I18n.locale is properly initialized"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "The comment 'order: after 02-freedom_patches.rb' does not follow Rails convention for controlling initializer load order since Rails loads initializers alphabetically by filename - consider using a numbered prefix like '03-i18n.rb'"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "The call to I18n.fallbacks.ensure_loaded! assumes I18n.fallbacks is always set and available, which will raise NoMethodError if I18n.fallbacks is nil"
+ }
+]

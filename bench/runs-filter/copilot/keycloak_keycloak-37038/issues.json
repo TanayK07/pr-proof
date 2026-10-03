@@ -1,0 +1,32 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Typo in comment: 'initializaed' should be 'initialized'"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Line contains only whitespace and should be removed to maintain clean code formatting"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "The copyright year is 2024, but GroupPermissionsV2.java uses 2025 - consider updating for consistency"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "The canManage() method incorrectly checks for VIEW permission in addition to MANAGE permission, which is inconsistent with canManage(GroupModel group) on line 79 that correctly checks only for MANAGE permission - VIEW scope should not grant manage capabilities"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Double semicolon at the end of the line defining topGroup - only one semicolon is needed"
+ }
+]

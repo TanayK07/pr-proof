@@ -1,0 +1,8 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Spelling error in documentation: \"humam\" should be \"human\" in the string that builds a human readable string from a list of failed check-ins"
+ }
+]

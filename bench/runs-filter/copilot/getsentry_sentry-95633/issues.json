@@ -1,0 +1,38 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "When an exception occurs during message processing in OrderedQueueWorker, the offset is still marked as complete in the finally block, causing failed messages to have their offsets committed and potentially causing data loss"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "If commit_function call on line 287 succeeds but mark_committed calls on line 289 fail, offsets will be committed to Kafka but not marked as committed in the local tracker, creating inconsistency and unnecessary retry overhead"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "_get_partition_lock method has a race condition where two threads calling simultaneously for the same partition that doesn't have a lock yet could create separate locks via setdefault, breaking thread-safety guarantee"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Exception handler in submit method has logic issue where if queue_pool.submit succeeds before exception, the except block will mark offset complete creating a race where offset could be committed before item is actually processed"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "OrderedQueueWorker's run method calls queue.get() without a timeout, causing thread to block indefinitely if queue is empty and preventing graceful shutdown when shutdown flag is set"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "_commit_loop waits first before checking for committable offsets, introducing unnecessary 1 second latency on first iteration before processing any commits"
+ }
+]

@@ -1,0 +1,8 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Double-checked locking pattern is incomplete - after acquiring the write lock on line 48, there's no re-check if another goroutine already populated the cache while waiting for the lock, causing a race condition where multiple goroutines could redundantly reload the assets"
+ }
+]

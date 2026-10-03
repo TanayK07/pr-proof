@@ -1,0 +1,38 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Permission denial cache is checked before validating if cached permissions exist and are complete, which could lead to permanent denial of access even after permissions are updated to grant access. The denial cache uses shortCacheTTL (30 seconds) causing denials to persist even after permission updates."
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "getCachedIdentityPermissions method doesn't account for actionSets used for folders:create action, meaning cache lookup only checks base action without considering actionSets, potentially missing valid permissions that would be found when calling getIdentityPermissions."
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Test case for returning permissions from cache was removed, and new tests focus on Check method's cache behavior but don't verify getUserPermissions caching logic directly via getCachedIdentityPermissions."
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Test sets permission cache entry with value of false for 'dashboards:uid:dash1' which is semantically incorrect - the map values should represent granted scopes (true) or not be present in the map at all, as the getScopeMap function only sets true values."
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Cache key construction for permission denial uses simple string concatenation without delimiters between name and parent fields, potentially causing cache key collisions (e.g., name='dash' parent='1_fold1' generates same key as name='dash_1' parent='fold1')."
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "Missing test coverage for denial cache population logic - no test verifies the denial cache is properly populated when a permission check returns false, only a test for reading from the denial cache exists."
+ }
+]

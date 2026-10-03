@@ -1,0 +1,20 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "isProvisionedPromRule is declared to take a PromRuleDTO but checks promRule.provenance even though PromRuleDTO does not declare a provenance field, relying on structural compatibility with GrafanaPromRuleDTO and failing TypeScript type-checking"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "isProvisionedPromRule function is misleading for non-Grafana rules since it reads provenance from a type that doesn't include it"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "The silence flow in RuleActionsButtons depends on rulerRule being present to render SilenceGrafanaRuleDrawer, but canEditRule and other abilities can now be derived from promRule when no rulerRule is available, causing the Silence notifications menu item to be enabled but non-functional when rulerRule is undefined"
+ }
+]

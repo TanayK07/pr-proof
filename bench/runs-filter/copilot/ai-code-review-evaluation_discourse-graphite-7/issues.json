@@ -1,0 +1,26 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Original code used scale-color($primary, $lightness: 30%) but change converts it to use 50% lightness for the light theme, which changes visual appearance and may not be intentional - should use dark-light-choose(scale-color($primary, $lightness: 30%), scale-color($secondary, $lightness: 70%))"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Original code used scale-color($primary, $lightness: 20%) but change converts it to use 50% lightness for the light theme, which changes visual appearance and may not be intentional - should use dark-light-choose(scale-color($primary, $lightness: 20%), scale-color($secondary, $lightness: 80%))"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "Original code used scale-color($primary, $lightness: 30%) but change converts it to use 70% lightness for the light theme, which is inconsistent with the dark theme value of 30% - should use dark-light-choose(scale-color($primary, $lightness: 30%), scale-color($secondary, $lightness: 70%))"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Original code used scale-color($primary, $lightness: 70%) but change converts it to use 30% lightness for the light theme, which changes visual appearance and may not be intentional - should use dark-light-choose(scale-color($primary, $lightness: 70%), scale-color($secondary, $lightness: 30%))"
+ }
+]

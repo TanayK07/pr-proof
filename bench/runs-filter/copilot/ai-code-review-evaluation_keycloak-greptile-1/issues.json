@@ -1,0 +1,44 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Typo in comment: 'Succesful event' should be 'Successful event'"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Checking for absence of //form[@id='webauth'] via findElement + broad Exception catch is brittle. Use Assert.assertThrows(NoSuchElementException.class, ...) or findElements(...).isEmpty() so the assertion is explicit and doesn't mask other exceptions"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "UsernameForm calls isConditionalPasskeysEnabled() without arguments, but the only available method is isConditionalPasskeysEnabled(UserModel user) in UsernamePasswordForm. This won't compile. Update the call to pass the appropriate user or add a no-arg overload that delegates appropriately"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "isConditionalPasskeysEnabled currently requires user != null, which prevents WebAuthnConditionalUIAuthenticator.fillContextForm() from running on the initial login page (where context.getUser() is typically null). That means enableWebAuthnConditionalUI/challenge/rpId won't be set and the passkeys conditional UI form won't be rendered. Consider removing the user != null requirement or splitting the logic"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Unused import: PasswordCredentialModel is imported but not referenced anywhere in this test class. Please remove it to keep the test compiling cleanly under strict build/checkstyle settings"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "The test asserts that the WebAuthn form is not present by calling driver.findElement(...) and catching a broad Exception. Since findElement never returns null (it throws when missing), this pattern is brittle and can hide unrelated failures. Prefer Assert.assertThrows(NoSuchElementException.class, ...) or use findElements(...).isEmpty() to check absence explicitly"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "This method overrides WebAuthnAuthenticator.shouldShowWebAuthnAuthenticators; it is advisable to add an Override annotation"
+ }
+]

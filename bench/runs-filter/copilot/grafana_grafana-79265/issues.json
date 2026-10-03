@@ -1,0 +1,56 @@
+[
+ {
+  "id": 0,
+  "path": null,
+  "line": null,
+  "issue": "Race condition in device limit enforcement logic between checking device count at line 110 and inserting new device at lines 120-147, allowing multiple concurrent requests to exceed the limit"
+ },
+ {
+  "id": 1,
+  "path": null,
+  "line": null,
+  "issue": "Error message 'device limit reached' is not user-friendly or informative - users won't understand what it means or how to resolve it"
+ },
+ {
+  "id": 2,
+  "path": null,
+  "line": null,
+  "issue": "TypeScript type inconsistency between anonymousDeviceLimit initialization (undefined) and type definition (number | undefined) - should be initialized to match type expectation"
+ },
+ {
+  "id": 3,
+  "path": null,
+  "line": null,
+  "issue": "Changing from asynchronous to synchronous device tagging is a significant behavioral change that impacts authentication flow performance - database issues will now block user authentication"
+ },
+ {
+  "id": 4,
+  "path": null,
+  "line": null,
+  "issue": "Test TestIntegrationBeyondDeviceLimit doesn't verify that existing devices can still be updated when the limit is reached"
+ },
+ {
+  "id": 5,
+  "path": null,
+  "line": null,
+  "issue": "New configuration setting AnonymousDeviceLimit lacks documentation explaining what it does, valid values, and behavior when limit is reached"
+ },
+ {
+  "id": 6,
+  "path": null,
+  "line": null,
+  "issue": "updateDevice function returns ErrDeviceLimitReached when rowsAffected == 0, but this could happen for multiple reasons (device doesn't exist or device is outside time window) - semantically incorrect error"
+ },
+ {
+  "id": 7,
+  "path": null,
+  "line": null,
+  "issue": "Constant anonymousDeviceExpiration is duplicated in two files (impl.go line 18 and database.go line 16), creating maintenance risk"
+ },
+ {
+  "id": 8,
+  "path": null,
+  "line": null,
+  "issue": "Device limit configuration is read without validation - negative values are not prevented and would be semantically incorrect"
+ }
+]
