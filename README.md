@@ -70,16 +70,16 @@ It kept 67 of 73 real bugs (91.8%) and removed 46 of 185 noise issues (25%). The
 
 Across both filter runs, pr-comment-validation dropped 11 issues that the benchmark counts as real bugs: 5 of CodeRabbit's 77 and 6 of Copilot's 73. By the benchmark's severity labels, 2 are High, 1 is Medium and 8 are Low.
 
-They don't cluster by bug type, but they do cluster by *why* they were dropped. In almost every case the validator found that the code behaves correctly today and ruled the comment wrong. Its reasoning is often defensible on its own terms (TypeScript accepts an implementation with fewer parameters; a sample rate of 0 is rejected elsewhere in production). The blind spot is comments of the form "this is fragile and will break when X changes".
+They don't cluster by bug type, but they do cluster by *why* they were dropped. In almost every case the validator found that the code behaves correctly today and ruled the comment wrong. Its reasoning is often defensible on its own terms (TypeScript accepts an implementation with fewer parameters; Python's hash randomization doesn't apply to integers; the HTML spec only uses the origin of `postMessage`'s target), so some of these are arguably mislabelled by the benchmark rather than missed. The blind spot is comments of the form "this is fragile and will break when X changes".
 
 | Miss | Severity | Kind | Dropped because |
 |---|---|---|---|
 | Keycloak permission cleanup skipped when only the v2 fine-grained-authz flag is on (missed on **both** tools) | High | feature-flag combination | validator reasoned v1 and v2 can't both be enabled |
-| `postMessage` target origin set to the full referrer URL (Copilot) | Medium | security | judged not exploitable in the current flow |
+| `postMessage` target origin set to the full referrer URL (Copilot) | Medium | security | the HTML spec uses only the origin part of `targetOrigin`, so the claimed failure doesn't happen |
 | falsy check skips a sample rate of 0 (CodeRabbit) | Low | edge-case value | 0 is invalid in production anyway |
 | `rowsAffected == 0` reported as limit reached; time skew in the limit check (Grafana) | Low | error semantics, timing | correct for the only current caller |
 | interface method missing a parameter (Cal.com, both tools) | Low | interface contract | allowed by TypeScript's arity rules |
-| unsynchronized `@loaded_locales` access; `hash()` not stable across processes (Copilot) | Low | concurrency, determinism | not reachable in the current code path |
+| unsynchronized `@loaded_locales` access; `hash()` not stable across processes (Copilot) | Low | concurrency, determinism | `load_locale` re-checks under the mutex; tuples of ints hash the same in every process |
 
 **Practical rule:** when a comment is about feature-flag or config combinations, security boundaries, or "this breaks if X changes", give it a human read even if pr-proof marks it wrong.
 
