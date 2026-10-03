@@ -66,6 +66,25 @@ The filter sees each of CodeRabbit's issues exactly as the benchmark extracted i
 
 It kept 67 of 73 real bugs (91.8%) and removed 46 of 185 noise issues (25%). The F1 gain (+2.1 points, 95% CI −0.8 to +5.1) is smaller than on CodeRabbit and not statistically significant. Copilot's reviews are less noisy to begin with, so there is less to remove.
 
+### What it gets wrong
+
+Across both filter runs, pr-comment-validation dropped 11 issues that the benchmark counts as real bugs: 5 of CodeRabbit's 77 and 6 of Copilot's 73. By the benchmark's severity labels, 2 are High, 1 is Medium and 8 are Low.
+
+They don't cluster by bug type, but they do cluster by *why* they were dropped. In almost every case the validator found that the code behaves correctly today and ruled the comment wrong. Its reasoning is often defensible on its own terms (TypeScript accepts an implementation with fewer parameters; a sample rate of 0 is rejected elsewhere in production). The blind spot is comments of the form "this is fragile and will break when X changes".
+
+| Miss | Severity | Kind | Dropped because |
+|---|---|---|---|
+| Keycloak permission cleanup skipped when only the v2 fine-grained-authz flag is on (missed on **both** tools) | High | feature-flag combination | validator reasoned v1 and v2 can't both be enabled |
+| `postMessage` target origin set to the full referrer URL (Copilot) | Medium | security | judged not exploitable in the current flow |
+| falsy check skips a sample rate of 0 (CodeRabbit) | Low | edge-case value | 0 is invalid in production anyway |
+| `rowsAffected == 0` reported as limit reached; time skew in the limit check (Grafana) | Low | error semantics, timing | correct for the only current caller |
+| interface method missing a parameter (Cal.com, both tools) | Low | interface contract | allowed by TypeScript's arity rules |
+| unsynchronized `@loaded_locales` access; `hash()` not stable across processes (Copilot) | Low | concurrency, determinism | not reachable in the current code path |
+
+**Practical rule:** when a comment is about feature-flag or config combinations, security boundaries, or "this breaks if X changes", give it a human read even if pr-proof marks it wrong.
+
+All 11 are kept as regression cases in [`bench/regressions/missed_real_bugs.json`](bench/regressions/missed_real_bugs.json), with the issue, the benchmark's label and the validator's evidence, so future versions of the skill can be checked against them.
+
 ### pr-review as a reviewer
 
 Plain Claude Code on Opus 5.5 is the control: same model, same isolation, no skills.

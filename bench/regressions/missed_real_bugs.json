@@ -1,0 +1,112 @@
+[
+ {
+  "source_tool": "coderabbit",
+  "pr": "https://github.com/keycloak/keycloak/pull/36880",
+  "issue": "Feature flag guard at line 77 only checks ADMIN_FINE_GRAINED_AUTHZ (V1), but when only ADMIN_FINE_GRAINED_AUTHZ_V2 is enabled, the entire cleanup block is skipped and permission cleanup won't occur for role, client, and group removal events",
+  "golden_comment": "Inconsistent feature flag bug causing orphaned permissions. The AdminPermissions event listener, responsible for cleaning up permissions upon role, client, or group removal, is incorrectly guarded by the ADMIN_FINE_GRAINED_AUTHZ (V1) feature flag. This is inconsistent with other methods in the class that use ADMIN_FINE_GRAINED_AUTHZ_V2. Consequently, if ADMIN_FINE_GRAINED_AUTHZ_V2 is enabled but V1 is not, the permission cleanup logic will not execute, leading to orphaned permission data. Cleanup should occur regardless of which fine-grained authorization version is enabled.",
+  "golden_severity": "High",
+  "expected_verdict": "VALID or PARTIALLY_VALID",
+  "got_verdict": "INVALID",
+  "validator_evidence": "services/.../permissions/AdminPermissions.java:77 adds the ADMIN_FINE_GRAINED_AUTHZ guard on purpose. common/.../Profile.java:56,58 define ADMIN_FINE_GRAINED_AUTHZ (v1) and ADMIN_FINE_GRAINED_AUTHZ_V2 (v2) as two versions of the same feature, so only one can be enabled at a time. When v2 is enabled, management() (AdminPermissions.java:66-70) returns MgmtPermissionsV2, whose clients() returns ClientPermissionsV2. ClientPermissionsV2.java:193-195 setPermissionsEnabled throws UnsupportedOperationException(\"Not supported in V2\"). Running the block under v2 would therefore throw during client removal instead of cleaning anything up. The v1 per-object 'permissions enabled' resources don't exist in v2. Skipping the block when only v2 is on is the intended fix, not a regression."
+ },
+ {
+  "source_tool": "coderabbit",
+  "pr": "https://github.com/ai-code-review-evaluation/sentry-greptile/pull/3",
+  "issue": "Truthiness check 'if client_sample_rate:' may skip valid sample_rate of 0 or 0.0, should use explicit None check 'if client_sample_rate is not None'",
+  "golden_comment": "sample_rate = 0.0 is falsy and skipped",
+  "golden_severity": "Low",
+  "expected_verdict": "VALID or PARTIALLY_VALID",
+  "got_verdict": "INVALID",
+  "validator_evidence": "src/sentry/testutils/factories.py:353 'if client_sample_rate:' is in a test helper that the PR does not add. A sample_rate of 0 is not valid: production ingestion in src/sentry/event_manager.py:785-786 only accepts 0 < client_sample_rate <= 1, and a 0 rate would imply an infinite upsample weight. Skipping 0/0.0 therefore matches production semantics. Switching to an 'is not None' check would diverge from event_manager."
+ },
+ {
+  "source_tool": "coderabbit",
+  "pr": "https://github.com/grafana/grafana/pull/79265",
+  "issue": "updateDevice returning ErrDeviceLimitReached when rowsAffected == 0 is semantically incorrect - zero rows affected could mean the device doesn't exist within the time window, not that the limit was reached",
+  "golden_comment": "Returning ErrDeviceLimitReached when no rows were updated is misleading; the device might not exist.",
+  "golden_severity": "Low",
+  "expected_verdict": "VALID or PARTIALLY_VALID",
+  "got_verdict": "INVALID",
+  "validator_evidence": "updateDevice (database.go:73-103) is private and only called from database.go:115-116, after count >= deviceLimit. There, zero rows affected means the device is not among the active devices in the 30-day window, i.e. it is a new or expired device that would push past the limit. Refusing it with ErrDeviceLimitReached is exactly the intended behavior, and client.go uses that error to deny access. Zero rows on MySQL when values are unchanged is not a concern either: the connection string sets clientFoundRows=true (pkg/services/sqlstore/sqlstore.go:287), so matched rows are counted."
+ },
+ {
+  "source_tool": "coderabbit",
+  "pr": "https://github.com/grafana/grafana/pull/79265",
+  "issue": "Potential time skew in limit check - CountDevices uses time.Now().UTC() while subsequent upsert operations use device.UpdatedAt, which may differ significantly",
+  "golden_comment": "Time window calculation inconsistency: Using device.UpdatedAt.UTC().Add(-anonymousDeviceExpiration) as the lower bound but device.UpdatedAt as the current time may not match the intended logic. Consider using time.Now().UTC() consistently.",
+  "golden_severity": "Low",
+  "expected_verdict": "VALID or PARTIALLY_VALID",
+  "got_verdict": "INVALID",
+  "validator_evidence": "In production, device.UpdatedAt is set to time.Now() in TagDevice (pkg/services/anonymous/anonimpl/impl.go ~line 140), only microseconds before CreateOrUpdateDevice calls time.Now() for the count window (database.go:110). Both windows are 30 days wide with a 1-minute slack at the end (database.go:81 and :110), so a sub-second gap has no practical effect. The only case where they differ by much is a test that sets UpdatedAt artificially."
+ },
+ {
+  "source_tool": "coderabbit",
+  "pr": "https://github.com/calcom/cal.com/pull/10967",
+  "issue": "The createEvent method signature in LarkCalendarService is missing the credentialId parameter required by the Calendar interface, violating the TypeScript interface contract",
+  "golden_comment": "The Calendar interface now requires createEvent(event, credentialId), but some implementations (e.g., Lark/Office365) still declare createEvent(event) only\u2014this breaks the interface contract (also applies to other locations in the PR).",
+  "golden_severity": "Low",
+  "expected_verdict": "VALID or PARTIALLY_VALID",
+  "got_verdict": "INVALID",
+  "validator_evidence": "packages/types/Calendar.d.ts:221 declares createEvent(event, credentialId). packages/app-store/larkcalendar/lib/CalendarService.ts:125 declares createEvent(event). TypeScript parameter bivariance/arity rules let an implementation with fewer parameters satisfy an interface method with more, so this does not break the contract or the build. Office365 and the base CalDAV service also leave the parameter off. The real issue is routing (see #2), not the type contract."
+ },
+ {
+  "source_tool": "copilot",
+  "pr": "https://github.com/keycloak/keycloak/pull/36880",
+  "issue": "registerListener is gated by ADMIN_FINE_GRAINED_AUTHZ (v1) but calls management(...) which can return V2 implementations when ADMIN_FINE_GRAINED_AUTHZ_V2 is enabled - if both features are enabled, listener can call V2 methods like clients().setPermissionsEnabled(...) which throws UnsupportedOperationException, causing runtime failures on client/group/role removal events",
+  "golden_comment": "Inconsistent feature flag bug causing orphaned permissions. The AdminPermissions event listener, responsible for cleaning up permissions upon role, client, or group removal, is incorrectly guarded by the ADMIN_FINE_GRAINED_AUTHZ (V1) feature flag. This is inconsistent with other methods in the class that use ADMIN_FINE_GRAINED_AUTHZ_V2. Consequently, if ADMIN_FINE_GRAINED_AUTHZ_V2 is enabled but V1 is not, the permission cleanup logic will not execute, leading to orphaned permission data. Cleanup should occur regardless of which fine-grained authorization version is enabled.",
+  "golden_severity": "High",
+  "expected_verdict": "VALID or PARTIALLY_VALID",
+  "got_verdict": "INVALID",
+  "validator_evidence": "The two features can't both be enabled. common/src/main/java/org/keycloak/common/Profile.java:56,58: ADMIN_FINE_GRAINED_AUTHZ (version 1) and ADMIN_FINE_GRAINED_AUTHZ_V2 (version 2) share the unversioned key 'admin-fine-grained-authz' (constructor :162-163 strips the _V2 suffix). Profile.java:283-286 throws ProfileException('Multiple versions of the same feature ... should not be enabled'), so only one version is ever active. When the listener's v1 gate (AdminPermissions.java:77) is true, V2 is off, so management() (:66-71) returns plain MgmtPermissions and never ClientPermissionsV2. The new gate actually fixes the problem: before this PR the listener ran with no gate, so with V2 enabled it would have reached ClientPermissionsV2.setPermissionsEnabled (:193), which throws."
+ },
+ {
+  "source_tool": "copilot",
+  "pr": "https://github.com/ai-code-review-evaluation/sentry-greptile/pull/3",
+  "issue": "Using Python's built-in `hash()` function can produce different values across process restarts, causing cache inconsistency in distributed systems - consider using a deterministic hash function like `hashlib.md5` or storing the sorted project IDs directly in the cache key",
+  "golden_comment": "Using Python\u2019s built-in hash() to build cache keys is non-deterministic across processes (hash randomization), so keys won\u2019t match across workers and invalidate_upsampling_cache may fail to delete them. Use a deterministic serialization of project_ids for the cache key.",
+  "golden_severity": "Low",
+  "expected_verdict": "VALID or PARTIALLY_VALID",
+  "got_verdict": "INVALID",
+  "validator_evidence": "src/sentry/api/helpers/error_upsampling.py:27 hashes `tuple(sorted(snuba_params.project_ids))`, and project_ids is typed list[int] (src/sentry/search/events/types.py:182-184). PYTHONHASHSEED randomization only applies to str/bytes (and datetime), not int. Tuples of ints hash the same way in every process: running `hash(tuple(sorted([5,3,100000000001])))` with PYTHONHASHSEED=1 and PYTHONHASHSEED=2 gives the same value (-4993397539313515218), while hash('a') changes. So the claimed inconsistency across restarts/processes doesn't happen. Only theoretical edge cases remain: mixed Python versions or architectures, and 64-bit collisions."
+ },
+ {
+  "source_tool": "copilot",
+  "pr": "https://github.com/grafana/grafana/pull/79265",
+  "issue": "updateDevice function returns ErrDeviceLimitReached when rowsAffected == 0, but this could happen for multiple reasons (device doesn't exist or device is outside time window) - semantically incorrect error",
+  "golden_comment": "Returning ErrDeviceLimitReached when no rows were updated is misleading; the device might not exist.",
+  "golden_severity": "Low",
+  "expected_verdict": "VALID or PARTIALLY_VALID",
+  "got_verdict": "INVALID",
+  "validator_evidence": "database.go:72-103: updateDevice is only reached when count >= limit (database.go:114-116). Both scenarios the reviewer lists are correctly 'limit reached'. A device that does not exist would be a new device. A device outside the 30-day window is not counted as active, so reactivating it would also exceed the limit. MySQL's 'unchanged row gives 0 affected rows' case does not apply: Grafana connects with clientFoundRows=true (pkg/services/sqlstore/sqlstore.go:287), so matched rows are counted."
+ },
+ {
+  "source_tool": "copilot",
+  "pr": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/9",
+  "issue": "ensure_loaded! method reads and potentially modifies @loaded_locales without proper synchronization, bypassing LOAD_MUTEX protection used in load_locale, leading to race conditions in multi-threaded environments",
+  "golden_comment": "Thread-safety issue with lazy @loaded_locales",
+  "golden_severity": "Low",
+  "expected_verdict": "VALID or PARTIALLY_VALID",
+  "got_verdict": "INVALID",
+  "validator_evidence": "lib/freedom_patches/translate_accelerator.rb:62-65: ensure_loaded! does an unlocked check and then calls load_locale. load_locale (lines 46-58) takes LOAD_MUTEX and checks again with `return if @loaded_locales.include?(locale)` before loading, so the mutex is never bypassed for the load itself. The unlocked check is the same fast path translate already uses (line 68). The only real gap is the `@loaded_locales ||= []` lazy init: in the worst case a locale gets loaded twice, which is idempotent and harmless."
+ },
+ {
+  "source_tool": "copilot",
+  "pr": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/4",
+  "issue": "The `postMessage` target origin is set to the full referrer URL (`request.referer`), but browsers compare the origin (scheme/host/port) only; including the path will prevent the message from being delivered in some user agents. Build a proper origin string from the referrer using URI parsing",
+  "golden_comment": "postMessage targetOrigin should be the origin (scheme+host+port), not the full referrer URL; using the full URL will cause the message to be dropped and prevent resizing.",
+  "golden_severity": "Medium",
+  "expected_verdict": "VALID or PARTIALLY_VALID",
+  "got_verdict": "INVALID",
+  "validator_evidence": "app/views/layouts/embed.html.erb:11 passes request.referer (a full URL) as postMessage's targetOrigin. The HTML spec's window.postMessage steps parse targetOrigin as a URL and use only its origin (scheme/host/port), so a path in it does not stop delivery in browsers that follow the spec. The claimed failure doesn't happen. Unrelated side notes: the referer is put into JS without escaping (ERB HTML-escapes it, but JS-escaping would be more correct), and an empty referer would throw, though ensure_embeddable (app/controllers/embed_controller.rb:26) already rejects requests with no matching referer host."
+ },
+ {
+  "source_tool": "copilot",
+  "pr": "https://github.com/calcom/cal.com/pull/10967",
+  "issue": "The createEvent method signature is missing the credentialId: number parameter that's now required by the Calendar interface",
+  "golden_comment": "The Calendar interface now requires createEvent(event, credentialId), but some implementations (e.g., Lark/Office365) still declare createEvent(event) only\u2014this breaks the interface contract (also applies to other locations in the PR).",
+  "golden_severity": "Low",
+  "expected_verdict": "VALID or PARTIALLY_VALID",
+  "got_verdict": "INVALID",
+  "validator_evidence": "packages/types/Calendar.d.ts:221 changes the interface to createEvent(event, credentialId: number). The implementations that leave out the second parameter (office365calendar/lib/CalendarService.ts:72, larkcalendar:125, packages/lib/CalendarService.ts:125, exchange*, CRM apps) still type-check, because TypeScript lets an implementing method take fewer parameters than the interface (parameter bivariance/arity rule). Only Google (googlecalendar/lib/CalendarService.ts:87) uses credentialId, and it declares it. CalendarManager.ts passes credential.id to every implementation, and the ones that don't need it ignore it. There is no compile or runtime error."
+ }
+]
