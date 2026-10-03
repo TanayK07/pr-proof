@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+:root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--fg:#e6edf3;--dim:#8b949e;--green:#3fb950;--blue:#58a6ff;--red:#f85149}
+*{margin:0;box-sizing:border-box}
+body{width:1280px;height:640px;background:var(--bg);color:var(--fg);font-family:Ubuntu,"DejaVu Sans",sans-serif;padding:64px 72px;display:grid;grid-template-columns:1.25fr 1fr;gap:56px;align-items:center;overflow:hidden}
+h1{font-family:"Ubuntu Mono","DejaVu Sans Mono",monospace;font-size:88px;letter-spacing:-2px}
+.tag{font-size:34px;color:var(--fg);margin-top:14px;line-height:1.25}
+.sub{font-size:22px;color:var(--dim);margin-top:18px;line-height:1.4}
+.cmd{margin-top:34px;font-family:"Ubuntu Mono",monospace;font-size:23px;color:var(--blue);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 20px;display:inline-block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:30px 32px}
+.k{font-size:17px;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+.v{font-size:44px;font-weight:700;margin:4px 0 18px}
+.g{color:var(--green)}.row{display:flex;align-items:baseline;gap:12px}
+.f1{display:flex;align-items:center;gap:12px;margin-top:8px;font-family:"Ubuntu Mono",monospace;font-size:22px}
+.bar{height:20px;border-radius:4px}
+.foot{font-size:15px;color:var(--dim);margin-top:16px}
+</style></head><body>
+<div>
+  <h1>pr-proof</h1>
+  <div class="tag">Make AI code review less noisy.</div>
+  <div class="sub">Claude Code skills that check every review comment against the code, with file:line evidence.</div>
+  <div class="cmd">/plugin marketplace add TanayK07/pr-proof</div>
+</div>
+<div class="card">
+  <div class="k">On CodeRabbit's reviews of 50 PRs</div>
+  <div class="v g">93.5% <span style="font-size:24px;font-weight:400">real bugs kept</span></div>
+  <div class="v">34% <span style="font-size:24px;font-weight:400;color:var(--dim)">noise removed</span></div>
+  <div class="k">F1 score</div>
+  <div class="f1"><span style="width:150px;color:var(--dim);font-family:Ubuntu">CodeRabbit</span><div class="bar" style="width:150px;background:#8b949e"></div>35.2%</div>
+  <div class="f1"><span style="width:150px;color:var(--green);font-family:Ubuntu">+ pr-proof</span><div class="bar" style="width:172px;background:var(--green)"></div>40.4%</div>
+  <div class="foot">Code Review Bench · reproducible</div>
+</div>
+</body></html>
